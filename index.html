@@ -267,32 +267,6 @@ body {
     </div>
 
     <div class="format-card">
-      <div class="format-header">📅 This Month</div>
-      <div class="format-grid" style="grid-template-columns: repeat(4,1fr);">
-        <div class="format-item movie">
-          <span class="icon">🎬</span>
-          <h3 id="monthMoviesCount">0</h3>
-          <p>Theater</p>
-        </div>
-        <div class="format-item streaming">
-          <span class="icon">📺</span>
-          <h3 id="monthStreamingCount">0</h3>
-          <p>Streaming</p>
-        </div>
-        <div class="format-item bluray">
-          <span class="icon">💿</span>
-          <h3 id="monthBlurayCount">0</h3>
-          <p>Blu-ray</p>
-        </div>
-        <div class="format-item dvd">
-          <span class="icon">📀</span>
-          <h3 id="monthDvdCount">0</h3>
-          <p>DVD</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="format-card">
       <div class="format-header">⏳ In Progress</div>
       <div class="format-grid" style="grid-template-columns: repeat(4,1fr);">
         <div class="format-item movie">
@@ -508,21 +482,6 @@ function updateDashboard() {
   document.getElementById("collectionStreaming").textContent = collectionStreaming;
   document.getElementById("collectionBluray").textContent = collectionBluray;
   document.getElementById("collectionDvd").textContent = collectionDvd;
-
-  /* THIS MONTH NOW USES FINISHED MOVIES ONLY */
-  const thisMonthMovies = movies.filter(m => m.month === currentMonth && m.ended);
-
-  document.getElementById("monthMoviesCount").textContent =
-    thisMonthMovies.filter(m => normalizeMovieType(m.type) === "theater").length;
-
-  document.getElementById("monthStreamingCount").textContent =
-    thisMonthMovies.filter(m => normalizeMovieType(m.type) === "streaming").length;
-
-  document.getElementById("monthBlurayCount").textContent =
-    thisMonthMovies.filter(m => normalizeMovieType(m.type) === "blu-ray").length;
-
-  document.getElementById("monthDvdCount").textContent =
-    thisMonthMovies.filter(m => normalizeMovieType(m.type) === "dvd").length;
 
   document.getElementById("inProgressTheater").textContent =
     movies.filter(m => m.month === currentMonth && m.started && !m.ended && normalizeMovieType(m.type) === "theater").length;
