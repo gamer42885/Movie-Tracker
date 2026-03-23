@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Movie Tracker</title>
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    color: #000;
+}
+.topnav {
+    background: linear-gradient(90deg, #4caf50, #2e7d32);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    gap: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 12px;
+    margin: 20px;
+    flex-wrap: wrap;
+}
+.topnav a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+}
+.topnav a::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 3px;
+    background: #fff;
+    border-radius: 3px;
+    transition: width 0.3s;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.topnav a:hover { background: rgba(255, 255, 255, 0.15); }
+.topnav a:hover::after { width: 80%; }
+
+.container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+
+button {
+    padding: 8px 12px;
+    background: #04AA6D;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin: 5px 0;
+    border-radius: 8px;
+    font-weight: 600;
+}
+button:hover { opacity: 0.92; }
+
+.month-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+.month-controls label { flex: 0 0 auto; }
+.month-controls select { flex: 1 1 220px; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
+.month-controls button { flex: 0 0 auto; }
+
+#movieForm {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px 20px;
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+#movieForm input,
+#movieForm select,
+#movieForm button {
+    padding: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+#cover, #movieForm button[type="submit"] {
+    grid-column: span 2;
+}
+#movieForm button[type="submit"] {
+    border: none;
+}
+
+.stats-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+#stats {
+    background: #fff;
+    padding: 14px 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    line-height: 1.7;
+    flex: 1 1 550px;
+}
+.stat-line { margin-bottom: 6px; }
+.release-line {
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.card-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.movie-card {
+    display: grid;
+    grid-template-columns: 100px 1fr 160px;
+    gap: 12px;
+    align-items: center;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 12px;
+}
+.movie-card img {
+    width: 85px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: #ddd;
+}
+.movie-details { font-size: 14px; line-height: 1.5; }
+.movie-details strong { font-size: 17px; }
+.movie-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.movie-controls button { font-size: 12px; padding: 6px; }
+
+.type-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.type-theater { background: #ffe082; }
+.type-streaming { background: #80cbc4; }
+.type-bluray { background: #90caf9; }
+.type-dvd { background: #ffe082; }
+
+@media(max-width:700px){
+    #movieForm { grid-template-columns: 1fr; }
+    #cover, #movieForm button[type="submit"] { grid-column: 1; }
+    .movie-card {
+        grid-template-columns: 85px 1fr;
+        grid-template-rows: auto auto;
+    }
+    .movie-controls {
+
+
+        flex-direction: row;
+        gap: 6px;
+        justify-content: flex-start;
+        grid-column: 1 / -1;
+        flex-wrap: wrap;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <a href="index.html">Home</a>
+  <a href="Movies.html">Movies</a>
+  <a href="Monthly_Tracker.html">Monthly Tracker</a>
+  <a href="Yearly_Tracker.html">Yearly Tracker</a>
+</div>
+
+<div class="container">
+    <h2>Monthly Movie Tracker</h2>
+
+    <div class="month-controls">
+        <label for="monthSelect">Select Month:</label>
+        <select id="monthSelect"></select>
+        <button id="addMonthBtn">+ Add Month</button>
+        <button id="deleteMonthBtn" style="background:#c0392b;">Delete Month</button>
+    </div>
+
+    <h3>Add / Edit Movie</h3>
+    <form id="movieForm">
+        <input type="text" id="title" placeholder="Movie Title" required>
+        <input type="text" id="director" placeholder="Director / Studio">
+        <input type="text" id="released" placeholder="Released (e.g. 2024 or Jul 12, 2024)">
+        <input type="text" id="runtime" placeholder="Runtime (e.g. 2h 15m)">
+        <input type="date" id="dateStarted">
+        <input type="date" id="dateEnded">
+        <select id="type">
+            <option>Theater</option>
+            <option>Streaming</option>
+            <option>Blu-ray</option>
+            <option>DVD</option>
+        </select>
+        <input type="text" id="genres" placeholder="Genres / Franchise (comma separated)">
+        <select id="rating">
+            <option value="">Select Rating</option>
+            <option value="1">1 ★</option>
+            <option value="2">2 ★★</option>
+            <option value="3">3 ★★★</option>
+            <option value="4">4 ★★★★</option>
+            <option value="5">5 ★★★★★</option>
+        </select>
+        <input type="file" id="cover" accept="image/*">
+        <button type="submit">Save Movie</button>
+    </form>
+
+    <h3>Watch Stats & Export</h3>
+    <div class="stats-wrap">
+        <div id="stats"></div>
+        <button id="exportPdfBtn" style="background:#8e44ad;">📄 Export Month to PDF</button>
+    </div>
+
+    <h3>My Movies</h3>
+    <div class="card-grid" id="movieGrid"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const monthSelect = document.getElementById("monthSelect");
+const title = document.getElementById("title");
+const director = document.getElementById("director");
+const released = document.getElementById("released");
+const runtime = document.getElementById("runtime");
+const dateStarted = document.getElementById("dateStarted");
+const dateEnded = document.getElementById("dateEnded");
+const type = document.getElementById("type");
+const genres = document.getElementById("genres");
+const rating = document.getElementById("rating");
+const cover = document.getElementById("cover");
+const stats = document.getElementById("stats");
+
+let editIndex = null;
+
+function getMovies() {
+    return JSON.parse(localStorage.getItem("movies")) || [];
+}
+function saveMovies(movies) {
+    localStorage.setItem("movies", JSON.stringify(movies));
+}
+function getMovieMonths() {
+    return JSON.parse(localStorage.getItem("movieMonths")) || [];
+}
+function saveMovieMonths(months) {
+    localStorage.setItem("movieMonths", JSON.stringify(months));
+}
+
+function parseDays(started, ended) {
+    if (!started || !ended) return "-";
+    const start = new Date(started);
+    const end = new Date(ended);
+    return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+}
+
+function extractReleaseYear(value) {
+    if (!value) return null;
+    const match = String(value).match(/\b(18|19|20|21)\d{2}\b/);
+    return match ? match[0] : null;
+}
+
+function parseRuntimeToMinutes(value) {
+    if (value === null || value === undefined || value === "") return 0;
+    if (typeof value === "number") return value;
+
+    const str = String(value).trim().toLowerCase();
+
+    if (/^\d+(\.\d+)?$/.test(str)) return Number(str);
+
+    if (/^\d{1,2}:\d{1,2}$/.test(str)) {
+        const parts = str.split(":").map(Number);
+        return (parts[0] * 60) + parts[1];
+    }
+
+    const hourMatch = str.match(/(\d+)\s*(h|hr|hrs|hour|hours)/);
+    const minuteMatch = str.match(/(\d+)\s*(m|min|mins|minute|minutes)/);
+
+    const hours = hourMatch ? Number(hourMatch[1]) : 0;
+    const minutes = minuteMatch ? Number(minuteMatch[1]) : 0;
+
+    if (hours || minutes) return (hours * 60) + minutes;
+
+    return 0;
+}
+
+function formatRuntime(totalMinutes) {
+    totalMinutes = Number(totalMinutes || 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+}
+
+function normalizeMovieType(value) {
+    const v = (value || "").trim().toLowerCase();
+    if (v === "digital") return "blu-ray";
+    if (v === "blu-ray/dvd") return "blu-ray";
+    return v;
+}
+
+function normalizeStoredMovies() {
+    const movies = getMovies();
+    let changed = false;
+    movies.forEach(movie => {
+        const normalized = normalizeMovieType(movie.type);
+        const proper = normalized === "blu-ray" ? "Blu-ray" : normalized === "dvd" ? "DVD" : normalized === "streaming" ? "Streaming" : "Theater";
+        if ((movie.type || "") !== proper) {
+            movie.type = proper;
+            changed = true;
+        }
+    });
+    if (changed) saveMovies(movies);
+}
+
+function getTypeClass(value) {
+    const v = normalizeMovieType(value);
+    if (v === "theater") return "type-theater";
+    if (v === "streaming") return "type-streaming";
+    if (v === "dvd") return "type-dvd";
+    return "type-bluray";
+}
+
+// ---------------- Month Management ----------------
+const currentDate = new Date();
+const currentMonthValue = currentDate.toISOString().slice(0, 7);
+const currentMonthLabel = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+if (!localStorage.getItem("movieMonths")) {
+    saveMovieMonths([{ label: currentMonthLabel, value: currentMonthValue }]);
+}
+
+function loadMonths() {
+    monthSelect.innerHTML = "";
+    let months = getMovieMonths();
+
+    if (!months.find(m => m.value === currentMonthValue)) {
+        months.push({ label: currentMonthLabel, value: currentMonthValue });
+        saveMovieMonths(months);
+    }
+
+    months.sort((a, b) => a.value.localeCompare(b.value));
+
+    months.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m.value;
+        opt.textContent = m.label;
+        monthSelect.appendChild(opt);
+    });
+
+    if ([...monthSelect.options].some(opt => opt.value === currentMonthValue)) {
+        monthSelect.value = currentMonthValue;
+    }
+}
+
+document.getElementById("addMonthBtn").onclick = () => {
+    const label = prompt("Enter month name (e.g. March 2026):");
+    const value = prompt("Enter month value (YYYY-MM):");
+
+    if (!label || !value) return;
+
+    let months = getMovieMonths();
+
+    if (months.some(m => m.value === value)) {
+        alert("That month already exists.");
+        monthSelect.value = value;
+        displayMovies();
+        return;
+    }
+
+    months.push({ label, value });
+    saveMovieMonths(months);
+    loadMonths();
+    monthSelect.value = value;
+    displayMovies();
+};
+
+document.getElementById("deleteMonthBtn").onclick = () => {
+    const month = monthSelect.value;
+    if (!month) return;
+    if (!confirm("Delete this month and all its movies?")) return;
+
+    let months = getMovieMonths().filter(m => m.value !== month);
+    if (!months.length) {
+        months = [{ label: currentMonthLabel, value: currentMonthValue }];
+    }
+    saveMovieMonths(months);
+
+    let movies = getMovies().filter(m => m.month !== month);
+    saveMovies(movies);
+
+    loadMonths();
+    displayMovies();
+};
+
+// ---------------- Add / Edit Movie ----------------
+document.getElementById("movieForm").onsubmit = function(e) {
+    e.preventDefault();
+
+    const month = monthSelect.value;
+    let movies = getMovies();
+
+    const movie = {
+        title: title.value.trim(),
+        director: director.value.trim(),
+        released: released.value.trim(),
+        runtime: runtime.value.trim(),
+        started: dateStarted.value,
+        ended: dateEnded.value,
+        type: type.value,
+        genres: genres.value.trim(),
+        rating: Number(rating.value) || 0,
+        cover: "",
+        month
+    };
+
+    const file = cover.files[0];
+
+    const saveData = (coverData) => {
+        if (coverData) movie.cover = coverData;
+
+        if (editIndex !== null) {
+            movie.cover = movie.cover || movies[editIndex].cover || "";
+            movies[editIndex] = movie;
+            editIndex = null;
+        } else {
+            movies.push(movie);
+        }
+
+        saveMovies(movies);
+        this.reset();
+        rating.value = "";
+        displayMovies();
+    };
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = () => saveData(reader.result);
+        reader.readAsDataURL(file);
+    } else {
+        saveData();
+    }
+};
+
+function editMovie(movie, index) {
+    editIndex = index;
+    title.value = movie.title || "";
+    director.value = movie.director || "";
+    released.value = movie.released || "";
+    runtime.value = movie.runtime || "";
+    dateStarted.value = movie.started || "";
+    dateEnded.value = movie.ended || "";
+    type.value = movie.type || "Theater";
+    genres.value = movie.genres || "";
+    rating.value = movie.rating || "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ---------------- Display Movies ----------------
+normalizeStoredMovies();
+
+function displayMovies() {
+    const month = monthSelect.value;
+    const grid = document.getElementById("movieGrid");
+    grid.innerHTML = "";
+
+    const movies = getMovies();
+    const filtered = movies.filter(m => m.month === month);
+
+    filtered.forEach((movie) => {
+        const realIndex = movies.findIndex(m =>
+            m.month === movie.month &&
+            m.title === movie.title &&
+            m.director === movie.director &&
+            m.started === movie.started &&
+            m.ended === movie.ended &&
+            m.type === movie.type &&
+            m.released === movie.released
+        );
+
+        const card = document.createElement("div");
+        card.className = "movie-card";
+
+        const days = parseDays(movie.started, movie.ended);
+
+        card.innerHTML = `
+            <img src="${movie.cover || ''}" alt="${movie.title}">
+            <div class="movie-details">
+                <strong>${movie.title}</strong><br>
+                Director / Studio: ${movie.director || "-"}<br>
+                Released: ${movie.released || "-"}<br>
+                Runtime: ${movie.runtime || "-"}<br>
+                Watch Span: ${days}<br>
+                Started: ${movie.started || "-"}<br>
+                Ended: ${movie.ended || "-"}<br>
+                Type: ${movie.type || "-"}<br>
+                Genres / Franchise: ${movie.genres || "-"}<br>
+                Rating: ${movie.rating || 0} ★<br>
+                <span class="type-badge ${getTypeClass(movie.type)}">${movie.type || "Movie"}</span>
+            </div>
+            <div class="movie-controls">
+                <button class="edit-btn" style="background:#2980b9;">Edit</button>
+                <button class="delete-btn" style="background:#c0392b;">Delete</button>
+            </div>
+        `;
+
+        card.querySelector(".edit-btn").addEventListener("click", () => editMovie(movie, realIndex));
+        card.querySelector(".delete-btn").addEventListener("click", () => {
+            if (confirm("Delete this movie?")) deleteMovie(realIndex);
+        });
+
+        grid.appendChild(card);
+    });
+
+    calculateStats();
+}
+
+function deleteMovie(index) {
+    let movies = getMovies();
+    movies.splice(index, 1);
+    saveMovies(movies);
+    displayMovies();
+}
+
+// ---------------- Stats ----------------
+function calculateStats() {
+    const month = monthSelect.value;
+    const movies = getMovies().filter(m => m.month === month);
+
+    let totalRuntime = 0;
+    let totalDays = 0;
+    let totalRating = 0;
+    let finishedCount = 0;
+    let inProgressCount = 0;
+
+    let theaterCount = 0;
+    let streamingCount = 0;
+    let blurayCount = 0;
+    let dvdCount = 0;
+
+    const releaseYears = {};
+
+    movies.forEach(movie => {
+        totalRuntime += parseRuntimeToMinutes(movie.runtime);
+        totalRating += Number(movie.rating || 0);
+
+        const days = parseDays(movie.started, movie.ended);
+        if (days !== "-") totalDays += days;
+
+        if (movie.ended) finishedCount++;
+        else if (movie.started && !movie.ended) inProgressCount++;
+
+        const movieType = normalizeMovieType(movie.type);
+        if (movieType === "theater") theaterCount++;
+        else if (movieType === "streaming") streamingCount++;
+        else if (movieType === "blu-ray") blurayCount++;
+        else if (movieType === "dvd") dvdCount++;
+
+        if ((movie.released || "").trim() !== "") {
+            const year = extractReleaseYear(movie.released);
+            if (year) {
+                releaseYears[year] = (releaseYears[year] || 0) + 1;
+            }
+        }
+    });
+
+    const avgRating = movies.length ? (totalRating / movies.length).toFixed(2) : "0.00";
+
+    const releaseBreakdown = Object.keys(releaseYears)
+        .sort((a, b) => Number(a) - Number(b))
+        .map(year => `${year}: ${releaseYears[year]}`)
+        .join(" | ");
+
+    stats.innerHTML = `
+        <div class="stat-line"><strong>Total Movies:</strong> ${movies.length}</div>
+        <div class="stat-line"><strong>Finished:</strong> ${finishedCount} | <strong>In Progress:</strong> ${inProgressCount}</div>
+        <div class="stat-line"><strong>Theater:</strong> ${theaterCount} | <strong>Streaming:</strong> ${streamingCount} | <strong>Blu-ray:</strong> ${blurayCount} | <strong>DVD:</strong> ${dvdCount}</div>
+        <div class="stat-line"><strong>Total Runtime:</strong> ${formatRuntime(totalRuntime)}</div>
+        <div class="stat-line"><strong>Total Watch Span:</strong> ${totalDays} day(s)</div>
+        <div class="stat-line"><strong>Average Rating:</strong> ${avgRating}</div>
+        <div class="release-line"><strong>Release Years:</strong> ${releaseBreakdown || "No release dates entered"}</div>
+    `;
+}
+
+// ---------------- PDF Export ----------------
+document.getElementById("exportPdfBtn").onclick = function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const selectedMonth = monthSelect.value;
+    const allMonths = getMovieMonths();
+    const monthLabel = (allMonths.find(m => m.value === selectedMonth) || {}).label || selectedMonth;
+    const movies = getMovies();
+    const filtered = movies.filter(m => m.month === selectedMonth);
+
+    let y = 20;
+    const pageHeight = doc.internal.pageSize.height;
+
+    doc.setFontSize(18);
+    doc.text(`Monthly Movie Report - ${monthLabel}`, 14, 14);
+
+    let totalRuntime = 0;
+    let totalDays = 0;
+    let totalRating = 0;
+    let theaterCount = 0;
+    let streamingCount = 0;
+    let blurayCount = 0;
+    let dvdCount = 0;
+    const releaseYears = {};
+
+    filtered.forEach((movie, i) => {
+        const cardHeight = 50;
+
+        if (y + cardHeight > pageHeight - 25) {
+            doc.addPage();
+            y = 20;
+        }
+
+        if (movie.cover) {
+            try {
+                doc.addImage(movie.cover, "JPEG", 14, y, 24, 34);
+            } catch {
+                try {
+                    doc.addImage(movie.cover, "PNG", 14, y, 24, 34);
+                } catch (e) {}
+            }
+        }
+
+        const textX = movie.cover ? 44 : 14;
+        const days = parseDays(movie.started, movie.ended);
+
+        if (days !== "-") totalDays += days;
+        totalRuntime += parseRuntimeToMinutes(movie.runtime);
+        totalRating += Number(movie.rating || 0);
+
+        const movieType = normalizeMovieType(movie.type);
+        if (movieType === "theater") theaterCount++;
+        else if (movieType === "streaming") streamingCount++;
+        else if (movieType === "blu-ray") blurayCount++;
+        else if (movieType === "dvd") dvdCount++;
+
+        const year = extractReleaseYear(movie.released);
+        if (year) releaseYears[year] = (releaseYears[year] || 0) + 1;
+
+        const details =
+            `Director/Studio: ${movie.director || "-"}\n` +
+            `Released: ${movie.released || "-"}\n` +
+            `Runtime: ${movie.runtime || "-"}\n` +
+            `Watch Span: ${days}\n` +
+            `Started: ${movie.started || "-"}\n` +
+            `Ended: ${movie.ended || "-"}\n` +
+            `Type: ${movie.type || "-"}\n` +
+            `Genres/Franchise: ${movie.genres || "-"}`;
+
+        doc.setFontSize(12);
+        doc.text(`${i + 1}. ${movie.title}`, textX, y + 6);
+        doc.setFontSize(10);
+        doc.text(details, textX, y + 12);
+        doc.text(`Rating: ${movie.rating || 0}/5`, textX, y + 42);
+
+        y += cardHeight;
+    });
+
+    const avgRating = filtered.length ? (totalRating / filtered.length).toFixed(2) : "0.00";
+    const releaseBreakdown = Object.keys(releaseYears)
+        .sort((a, b) => Number(a) - Number(b))
+        .map(year => `${year}: ${releaseYears[year]}`)
+        .join(" | ");
+
+    if (y + 35 > pageHeight - 10) {
+        doc.addPage();
+        y = 20;
+    }
+
+    doc.setFontSize(14);
+    doc.text("Monthly Summary", 14, y);
+    doc.setFontSize(11);
+    doc.text(`Total Movies: ${filtered.length} | Theater: ${theaterCount} | Streaming: ${streamingCount} | Blu-ray: ${blurayCount} | DVD: ${dvdCount}`, 14, y + 8, { maxWidth: 180 });
+    doc.text(`Total Runtime: ${formatRuntime(totalRuntime)} | Total Watch Span: ${totalDays} | Avg Rating: ${avgRating}`, 14, y + 16, { maxWidth: 180 });
+    doc.text(`Release Years: ${releaseBreakdown || "No release dates entered"}`, 14, y + 24, { maxWidth: 180 });
+
+    doc.save("Monthly_Movie_Report.pdf");
+};
+
+// ---------------- Init ----------------
+monthSelect.onchange = displayMovies;
+loadMonths();
+displayMovies();
+</script>
+</body>
+</html>

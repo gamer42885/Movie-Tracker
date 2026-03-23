@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movies</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  color: #000;
+}
+
+/* Topnav */
+.topnav {
+  background: linear-gradient(90deg, #4caf50, #2e7d32);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 20px;
+  gap: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-radius: 12px;
+  margin: 20px;
+  flex-wrap: wrap;
+}
+.topnav a {
+  color: white;
+  text-decoration: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.3s ease;
+}
+.topnav a::after {
+  content: '';
+  display: block;
+  width: 0;
+  height: 3px;
+  background: #fff;
+  border-radius: 3px;
+  transition: width 0.3s;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.topnav a:hover {
+  background: rgba(255,255,255,0.15);
+}
+.topnav a:hover::after {
+  width: 80%;
+}
+
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h2, h3 {
+  margin-top: 0;
+}
+
+.section-box {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 18px;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 8px 12px;
+  background: #04AA6D;
+  color: white;
+  border: none;
+  cursor: pointer;
+  margin: 10px 0;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+button:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+input[type=text],
+select,
+input[type=file] {
+  padding: 8px;
+  width: 100%;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+#formatFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#formatFilters button {
+  margin: 0;
+}
+#formatFilters button.active {
+  background: #1976d2;
+  color: #fff;
+  opacity: 1;
+}
+
+.summary-line {
+  line-height: 1.9;
+  font-size: 15px;
+}
+
+.summary-group {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8f8f8;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.series-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 15px;
+  transition: 0.2s ease;
+}
+.series-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.14);
+}
+
+.series-info {
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+.series-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+.series-counter {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 14px;
+  color: #444;
+}
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.movie-card {
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.movie-card img {
+  width: 100px;
+  height: 150px;
+  object-fit: cover;
+  margin: 8px 0;
+  border-radius: 8px;
+  background: #ddd;
+}
+
+.movie-title {
+  font-weight: 600;
+  font-size: 14px;
+  min-height: 40px;
+}
+
+.movie-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.movie-controls label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.format-label {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 7px;
+  font-size: 11px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.format-theater { background: #a5d6a7; }
+.format-bluray { background: #90caf9; }
+.format-dvd { background: #ffd54f; }
+.format-streaming { background: #ffcc80; }
+
+.highlight {
+  background: yellow;
+  font-weight: bold;
+}
+
+.add-movie-inline {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+.add-movie-inline input,
+.add-movie-inline select,
+.add-movie-inline button {
+  margin: 5px 2px;
+  padding: 7px;
+  font-size: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+.add-movie-inline button {
+  background: #04AA6D;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.form-grid .full {
+  grid-column: 1 / -1;
+}
+
+.counter-chip {
+  display: inline-block;
+  margin: 4px 8px 0 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef3f7;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .movie-card {
+    font-size: 14px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <a href="index.html">Home</a>
+  <a href="Movies.html">Movies</a>
+  <a href="Monthly_Tracker.html">Monthly Tracker</a>
+  <a href="Yearly_Tracker.html">Yearly Tracker</a>
+</div>
+
+<div class="container">
+
+  <div class="section-box">
+    <h2>🎬 Movie Collection</h2>
+    <p>Track your movie franchises, collections, and watch progress.</p>
+  </div>
+
+  <div class="section-box">
+    <form id="addSeriesForm">
+      <h3>Add New Collection / Franchise</h3>
+
+      <div class="form-grid">
+        <input type="text" id="seriesName" placeholder="Collection / Franchise Name" required>
+        <input type="text" id="seriesAuthor" placeholder="Studio / Creator / Director" required>
+        <div id="movieInputs" class="full"></div>
+      </div>
+
+      <button type="button" id="addMovieBtn">+ Add Another Title</button>
+      <button type="submit">Add Collection</button>
+    </form>
+  </div>
+
+  <div class="section-box">
+    <h3>Overall Totals</h3>
+
+    <div class="summary-group summary-line">
+      <strong>Watched Titles:</strong> <span id="totalWatched">0</span> |
+      <strong>Owned Titles:</strong> <span id="totalHave">0</span>
+    </div>
+
+    <div class="summary-group summary-line">
+      <strong>By Format:</strong><br>
+      <span class="counter-chip">Theater: <span id="totalMoviesTheater">0</span></span>
+      <span class="counter-chip">Blu-ray: <span id="totalMoviesBluray">0</span></span>
+      <span class="counter-chip">DVD: <span id="totalMoviesDvd">0</span></span>
+      <span class="counter-chip">Streaming: <span id="totalMoviesStreaming">0</span></span>
+    </div>
+  </div>
+
+  <div class="section-box">
+    <h3>Filter by Format</h3>
+    <div id="formatFilters">
+      <button type="button" onclick="setFormatFilter('All')">All</button>
+      <button type="button" onclick="setFormatFilter('Movie')">Theater</button>
+      <button type="button" onclick="setFormatFilter('Blu-ray')">Blu-ray</button>
+      <button type="button" onclick="setFormatFilter('DVD')">DVD</button>
+      <button type="button" onclick="setFormatFilter('Streaming')">Streaming</button>
+    </div>
+
+    <h3 style="margin-top:16px;">Search Collections / Movies</h3>
+    <input type="text" id="searchInput" placeholder="Search by collection, creator, or movie">
+  </div>
+
+  <div class="card-grid" id="seriesGrid"></div>
+</div>
+
+<script>
+// LocalStorage helpers
+function getMovieSeriesData() {
+  return JSON.parse(localStorage.getItem('movieSeriesData') || '[]');
+}
+function saveMovieSeriesData(data) {
+  localStorage.setItem('movieSeriesData', JSON.stringify(data));
+}
+function getMovieCheckboxState() {
+  return JSON.parse(localStorage.getItem('movieCheckboxState') || '{}');
+}
+function saveMovieCheckboxState(state) {
+  localStorage.setItem('movieCheckboxState', JSON.stringify(state));
+}
+
+let currentFormatFilter = "All";
+
+function normalizeLegacyFormats(data) {
+  let changed = false;
+
+  data.forEach(series => {
+    if (!series.books) return;
+
+    series.books.forEach(movie => {
+      if (movie.format === "Digital") {
+        movie.format = "Streaming";
+        changed = true;
+      } else if (movie.format === "Blu-ray / DVD") {
+        movie.format = "Blu-ray";
+        changed = true;
+      }
+    });
+  });
+
+  if (changed) {
+    saveMovieSeriesData(data);
+  }
+}
+
+function setFormatFilter(format) {
+  currentFormatFilter = format;
+  renderCards();
+
+  document.querySelectorAll('#formatFilters button').forEach(btn => {
+    btn.classList.remove('active');
+    const map = {
+      "All": "All",
+      "Movie": "Theater",
+      "Blu-ray": "Blu-ray",
+      "DVD": "DVD",
+      "Streaming": "Streaming"
+    };
+    if (btn.textContent === map[format]) btn.classList.add('active');
+  });
+}
+
+function getDisplayFormat(format) {
+  switch (format) {
+    case "Movie": return "Theater";
+    case "Blu-ray": return "Blu-ray";
+    case "DVD": return "DVD";
+    case "Streaming": return "Streaming";
+    default: return "Theater";
+  }
+}
+
+function isOwnedFormat(format) {
+  return format === "Blu-ray" || format === "DVD";
+}
+
+function createMovieInput() {
+  const div = document.createElement('div');
+  div.className = 'movie-input form-grid';
+  div.innerHTML = `
+    <input type="text" placeholder="Movie Title" class="movieTitle">
+    <select class="movieFormat">
+      <option value="Movie">Theater</option>
+      <option value="Blu-ray">Blu-ray</option>
+      <option value="DVD">DVD</option>
+      <option value="Streaming">Streaming</option>
+    </select>
+    <input type="file" accept="image/*" class="movieCover">
+  `;
+  return div;
+}
+
+// Initial input
+document.getElementById('movieInputs').appendChild(createMovieInput());
+
+document.getElementById('addMovieBtn').addEventListener('click', () => {
+  document.getElementById('movieInputs').appendChild(createMovieInput());
+});
+
+// Add new collection
+document.getElementById('addSeriesForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const name = document.getElementById('seriesName').value.trim();
+  const author = document.getElementById('seriesAuthor').value.trim();
+  const movieDivs = document.querySelectorAll('#movieInputs .movie-input');
+  const movies = [];
+
+  for (let div of movieDivs) {
+    const title = div.querySelector('.movieTitle').value.trim();
+    const format = div.querySelector('.movieFormat').value;
+    const file = div.querySelector('.movieCover').files[0];
+
+    if (title) {
+      const cover = file
+        ? await new Promise(res => {
+            const r = new FileReader();
+            r.onload = () => res(r.result);
+            r.readAsDataURL(file);
+          })
+        : "";
+
+      movies.push({ title, cover, format });
+    }
+  }
+
+  if (!name || !author || !movies.length) {
+    alert("Please add a collection name, creator/studio, and at least one movie.");
+    return;
+  }
+
+  const data = getMovieSeriesData();
+  data.push({ name, author, books: movies });
+  saveMovieSeriesData(data);
+
+  document.getElementById('addSeriesForm').reset();
+  document.getElementById('movieInputs').innerHTML = "";
+  document.getElementById('movieInputs').appendChild(createMovieInput());
+
+  renderCards();
+});
+
+// Search
+document.getElementById('searchInput').addEventListener('input', renderCards);
+
+function filterSeries(series) {
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!query) return true;
+
+  const nameMatch = series.name.toLowerCase().includes(query);
+  const authorMatch = series.author.toLowerCase().includes(query);
+  const bookMatch = (series.books || []).some(b => b.title.toLowerCase().includes(query));
+
+  return nameMatch || authorMatch || bookMatch;
+}
+
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlightMatch(text) {
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) return text;
+  const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+  return String(text).replace(regex, '<span class="highlight">$1</span>');
+}
+
+function getFormatClass(format) {
+  switch (format) {
+    case "Movie": return "format-theater";
+    case "Blu-ray": return "format-bluray";
+    case "DVD": return "format-dvd";
+    case "Streaming": return "format-streaming";
+    default: return "format-theater";
+  }
+}
+
+// Render all cards
+function renderCards() {
+  const grid = document.getElementById('seriesGrid');
+  grid.innerHTML = "";
+
+  const data = getMovieSeriesData();
+  normalizeLegacyFormats(data);
+  const state = getMovieCheckboxState();
+
+  data.forEach((series, sIndex) => {
+    if (!filterSeries(series)) return;
+
+    const visibleTitles = (series.books || []).filter(movie => {
+      return currentFormatFilter === "All" || movie.format === currentFormatFilter;
+    });
+
+    const card = document.createElement('div');
+    card.className = 'series-card';
+
+    card.innerHTML = `
+      <div class="series-info">
+        <div class="series-title">${highlightMatch(series.name)}</div>
+        <div>${highlightMatch(series.author)}</div>
+        <span class="series-counter"></span><br>
+        <button type="button" onclick="removeSeries(${sIndex})" style="background:#c0392b;">Remove Collection</button>
+      </div>
+      <div class="movie-grid" id="movie-grid-${sIndex}"></div>
+      <div class="add-movie-inline"></div>
+    `;
+
+    const movieGrid = card.querySelector(`#movie-grid-${sIndex}`);
+
+    visibleTitles.forEach(movie => {
+      const bIndex = (series.books || []).indexOf(movie);
+
+      const haveId = `movie-have-${sIndex}-${bIndex}`;
+      const watchedId = `movie-watched-${sIndex}-${bIndex}`;
+
+      const movieDiv = document.createElement('div');
+      movieDiv.className = 'movie-card';
+      movieDiv.innerHTML = `
+        <div class="movie-title">${highlightMatch(movie.title)}</div>
+        <small class="format-label ${getFormatClass(movie.format)}">${getDisplayFormat(movie.format)}</small>
+        ${movie.cover ? `<br><img src="${movie.cover}" alt="${movie.title} poster">` : ""}
+        <div class="movie-controls">
+          <label>
+            <input type="checkbox" id="${haveId}" ${state[haveId] ? "checked" : ""} onchange="updateCheckbox('${haveId}')">
+            Owned
+          </label>
+          <label>
+            <input type="checkbox" id="${watchedId}" ${state[watchedId] ? "checked" : ""} onchange="handleWatched('${watchedId}','${haveId}','${movie.format}')">
+            Watched
+          </label>
+          <button type="button" onclick="deleteMovie(${sIndex},${bIndex})" style="background:#c0392b;">Delete</button>
+        </div>
+      `;
+      movieGrid.appendChild(movieDiv);
+    });
+
+    const inlineForm = card.querySelector('.add-movie-inline');
+    inlineForm.appendChild(createMovieInput());
+
+    const addBtn = document.createElement('button');
+    addBtn.type = "button";
+    addBtn.textContent = "Add Movie";
+    addBtn.onclick = () => addMovieInline(sIndex, inlineForm);
+    inlineForm.appendChild(addBtn);
+
+    grid.appendChild(card);
+  });
+
+  updateCounters();
+}
+
+// Checkbox logic
+function updateCheckbox(id) {
+  const state = getMovieCheckboxState();
+  const box = document.getElementById(id);
+  if (!box) return;
+  state[id] = box.checked;
+  saveMovieCheckboxState(state);
+  updateCounters();
+}
+
+function handleWatched(watchedId, haveId, format) {
+  const watchedBox = document.getElementById(watchedId);
+  const haveBox = document.getElementById(haveId);
+
+  if (watchedBox && watchedBox.checked && haveBox && isOwnedFormat(format)) {
+    haveBox.checked = true;
+  }
+
+  updateCheckbox(watchedId);
+  updateCheckbox(haveId);
+}
+
+// Totals
+function updateCounters() {
+  const data = getMovieSeriesData();
+  const state = getMovieCheckboxState();
+
+  let grandTotalWatched = 0;
+  let grandTotalOwned = 0;
+
+  let countTheater = 0;
+  let countBluray = 0;
+  let countDvd = 0;
+  let countStreaming = 0;
+
+  const cards = document.querySelectorAll('.series-card');
+
+  data.forEach((series, sIndex) => {
+    const totalTitles = (series.books || []).length;
+    let watchedCount = 0;
+    let ownedCount = 0;
+
+    (series.books || []).forEach((movie, bIndex) => {
+      const watchedId = `movie-watched-${sIndex}-${bIndex}`;
+      const haveId = `movie-have-${sIndex}-${bIndex}`;
+
+      const watchedChecked = !!state[watchedId];
+      const ownedChecked = !!state[haveId];
+
+      if (watchedChecked) {
+        watchedCount++;
+        grandTotalWatched++;
+      }
+
+      if (ownedChecked) {
+        ownedCount++;
+        grandTotalOwned++;
+      }
+
+      if (movie.format === "Movie") countTheater++;
+      if (movie.format === "Blu-ray") countBluray++;
+      if (movie.format === "DVD") countDvd++;
+      if (movie.format === "Streaming") countStreaming++;
+    });
+
+    const visibleCard = cards[sIndex];
+    const counter = visibleCard?.querySelector('.series-counter');
+    if (counter) {
+      counter.textContent = `${watchedCount}/${totalTitles} Watched | ${ownedCount}/${totalTitles} Owned`;
+    }
+  });
+
+  document.getElementById('totalWatched').textContent = grandTotalWatched;
+  document.getElementById('totalHave').textContent = grandTotalOwned;
+
+  document.getElementById('totalMoviesTheater').textContent = countTheater;
+  document.getElementById('totalMoviesBluray').textContent = countBluray;
+  document.getElementById('totalMoviesDvd').textContent = countDvd;
+  document.getElementById('totalMoviesStreaming').textContent = countStreaming;
+}
+
+// Delete
+function deleteMovie(s, b) {
+  const data = getMovieSeriesData();
+  data[s].books.splice(b, 1);
+  saveMovieSeriesData(data);
+  renderCards();
+}
+
+function removeSeries(s) {
+  const data = getMovieSeriesData();
+  data.splice(s, 1);
+  saveMovieSeriesData(data);
+  renderCards();
+}
+
+// Inline add movie
+async function addMovieInline(s, container) {
+  const movieDiv = container.querySelector('.movie-input');
+  const titleInput = movieDiv.querySelector('.movieTitle');
+  const formatSelect = movieDiv.querySelector('.movieFormat');
+  const fileInput = movieDiv.querySelector('.movieCover');
+
+  const title = titleInput.value.trim();
+  if (!title) return alert("Enter a movie title.");
+
+  const format = formatSelect.value;
+  let cover = "";
+
+  if (fileInput.files[0]) {
+    cover = await new Promise(res => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.readAsDataURL(fileInput.files[0]);
+    });
+  }
+
+  const data = getMovieSeriesData();
+  data[s].books.push({ title, cover, format });
+  saveMovieSeriesData(data);
+  renderCards();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const data = getMovieSeriesData();
+  normalizeLegacyFormats(data);
+  setFormatFilter("All");
+  renderCards();
+});
+</script>
+
+</body>
+</html>

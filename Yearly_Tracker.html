@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yearly Movie Summary</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #000;
+}
+
+/* Topnav Styles */
+.topnav {
+    background: linear-gradient(90deg, #4caf50, #2e7d32);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    gap: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 12px;
+    margin: 20px;
+    flex-wrap: wrap;
+}
+
+.topnav a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.topnav a::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 3px;
+    background: #fff;
+    border-radius: 3px;
+    transition: width 0.3s;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.topnav a:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.topnav a:hover::after {
+    width: 80%;
+}
+
+.container {
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+button {
+    padding: 8px 12px;
+    background: #04AA6D;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin: 10px 0 20px 0;
+    border-radius: 8px;
+    font-weight: 600;
+}
+button:hover {
+    opacity: 0.9;
+}
+
+.summary-box {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.summary-box h3 {
+    margin-top: 0;
+}
+
+@media (max-width: 600px) {
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="topnav">
+    <a href="index.html">Home</a>
+    <a href="Movies.html">Movies</a>
+    <a href="Monthly_Tracker.html">Monthly Tracker</a>
+    <a href="Yearly_Tracker.html">Yearly Tracker</a>
+</div>
+
+<div class="container">
+    <h2>Yearly Movie Summary</h2>
+
+    <button id="exportYearPdfBtn" style="background:#8e44ad;">📄 Export Year as PDF</button>
+
+    <div id="yearSummary" class="summary-box"></div>
+    <div id="dashboard"></div>
+</div>
+
+<script>
+function formatRuntime(totalMinutes) {
+    totalMinutes = Number(totalMinutes || 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+}
+
+function parseRuntimeToMinutes(value) {
+    if (value === null || value === undefined || value === "") return 0;
+    if (typeof value === "number") return value;
+
+    const str = String(value).trim().toLowerCase();
+
+    if (/^\d+(\.\d+)?$/.test(str)) {
+        return Number(str);
+    }
+
+    if (/^\d{1,2}:\d{1,2}$/.test(str)) {
+        const [h, m] = str.split(":").map(Number);
+        return (h * 60) + m;
+    }
+
+    const hourMatch = str.match(/(\d+)\s*(h|hr|hrs|hour|hours)/);
+    const minuteMatch = str.match(/(\d+)\s*(m|min|mins|minute|minutes)/);
+
+    const hours = hourMatch ? Number(hourMatch[1]) : 0;
+    const minutes = minuteMatch ? Number(minuteMatch[1]) : 0;
+
+    if (hours || minutes) {
+        return (hours * 60) + minutes;
+    }
+
+    return 0;
+}
+
+function extractReleaseYear(value) {
+    if (!value) return null;
+    const match = String(value).match(/\b(18|19|20|21)\d{2}\b/);
+    return match ? match[0] : null;
+}
+
+function normalizeMovieType(value) {
+    const v = (value || "").trim().toLowerCase();
+    if (v === "digital") return "blu-ray";
+    if (v === "blu-ray/dvd") return "blu-ray";
+    return v;
+}
+
+// -------------------- Render Dashboard --------------------
+function renderDashboard() {
+    const months = JSON.parse(localStorage.getItem("movieMonths")) || [];
+    const movies = JSON.parse(localStorage.getItem("movies")) || [];
+    const container = document.getElementById("dashboard");
+
+    container.innerHTML = "";
+
+    const totalMovies = movies.length;
+    const totalRuntime = movies.reduce((sum, m) => sum + parseRuntimeToMinutes(m.runtime), 0);
+    const avgRating = movies.length
+        ? (movies.reduce((sum, m) => sum + Number(m.rating || 0), 0) / movies.length).toFixed(2)
+        : 0;
+
+    const totalTheater = movies.filter(m => (m.type || "").trim().toLowerCase() === "theater").length;
+    const totalStreaming = movies.filter(m => (m.type || "").trim().toLowerCase() === "streaming").length;
+    const totalBluray = movies.filter(m => normalizeMovieType(m.type) === "blu-ray").length;
+    const totalDvd = movies.filter(m => normalizeMovieType(m.type) === "dvd").length;
+
+    const genreCount = {};
+    movies.forEach(m => {
+        if (!m.genres) return;
+        m.genres.split(",").forEach(tag => {
+            tag = tag.trim();
+            if (tag) genreCount[tag] = (genreCount[tag] || 0) + 1;
+        });
+    });
+
+    const topGenres = Object.entries(genreCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([g, c]) => `${g} (${c})`)
+        .join(", ");
+
+    document.getElementById("yearSummary").innerHTML = `
+        <h3>Yearly Summary</h3>
+        <p>Total Movies Watched: ${totalMovies}</p>
+        <p>Total Theater: ${totalTheater}</p>
+        <p>Total Streaming: ${totalStreaming}</p>
+        <p>Total Blu-ray: ${totalBluray}</p>
+        <p>Total DVD: ${totalDvd}</p>
+        <p>Total Runtime: ${formatRuntime(totalRuntime)}</p>
+        <p>Average Rating: ${avgRating}</p>
+        <p>Top Genres / Franchises: ${topGenres || "N/A"}</p>
+    `;
+
+    months.forEach(m => {
+        const monthMovies = movies.filter(movie => movie.month === m.value);
+        const totalMonthMovies = monthMovies.length;
+        const totalMonthRuntime = monthMovies.reduce((sum, movie) => sum + parseRuntimeToMinutes(movie.runtime), 0);
+        const monthTheater = monthMovies.filter(movie => (movie.type || "").trim().toLowerCase() === "theater").length;
+        const monthStreaming = monthMovies.filter(movie => (movie.type || "").trim().toLowerCase() === "streaming").length;
+        const monthBluray = monthMovies.filter(movie => normalizeMovieType(movie.type) === "blu-ray").length;
+        const monthDvd = monthMovies.filter(movie => normalizeMovieType(movie.type) === "dvd").length;
+
+        const div = document.createElement("div");
+        div.className = "summary-box";
+        div.innerHTML = `
+            <h3>${m.label}</h3>
+            <p>Movies: ${totalMonthMovies}</p>
+            <p>Theater: ${monthTheater}</p>
+            <p>Streaming: ${monthStreaming}</p>
+            <p>Blu-ray: ${monthBluray}</p>
+            <p>DVD: ${monthDvd}</p>
+            <p>Runtime: ${formatRuntime(totalMonthRuntime)}</p>
+        `;
+        container.appendChild(div);
+    });
+}
+
+renderDashboard();
+
+// -------------------- Export Yearly PDF --------------------
+document.getElementById("exportYearPdfBtn").addEventListener("click", () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const months = JSON.parse(localStorage.getItem("movieMonths")) || [];
+    const movies = JSON.parse(localStorage.getItem("movies")) || [];
+
+    let y = 10;
+
+    doc.setFontSize(18);
+    doc.text("Yearly Movie Report", 10, y);
+    y += 10;
+
+    const totalMovies = movies.length;
+    const totalRuntime = movies.reduce((sum, m) => sum + parseRuntimeToMinutes(m.runtime), 0);
+    const avgRating = movies.length
+        ? (movies.reduce((sum, m) => sum + Number(m.rating || 0), 0) / movies.length).toFixed(2)
+        : 0;
+
+    const totalTheater = movies.filter(m => (m.type || "").trim().toLowerCase() === "theater").length;
+    const totalStreaming = movies.filter(m => (m.type || "").trim().toLowerCase() === "streaming").length;
+    const totalBluray = movies.filter(m => normalizeMovieType(m.type) === "blu-ray").length;
+    const totalDvd = movies.filter(m => normalizeMovieType(m.type) === "dvd").length;
+
+    doc.setFontSize(12);
+    doc.text(`Total Movies: ${totalMovies}`, 10, y); y += 6;
+    doc.text(`Total Theater: ${totalTheater}`, 10, y); y += 6;
+    doc.text(`Total Streaming: ${totalStreaming}`, 10, y); y += 6;
+    doc.text(`Total Blu-ray: ${totalBluray}`, 10, y); y += 6;
+    doc.text(`Total DVD: ${totalDvd}`, 10, y); y += 6;
+    doc.text(`Total Runtime: ${formatRuntime(totalRuntime)}`, 10, y); y += 6;
+    doc.text(`Average Rating: ${avgRating}`, 10, y); y += 10;
+
+    months.forEach(m => {
+        if (y > 270) {
+            doc.addPage();
+            y = 10;
+        }
+
+        const monthMovies = movies.filter(movie => movie.month === m.value);
+        const totalMonthMovies = monthMovies.length;
+        const totalMonthRuntime = monthMovies.reduce((sum, movie) => sum + parseRuntimeToMinutes(movie.runtime), 0);
+        const monthTheater = monthMovies.filter(movie => (movie.type || "").trim().toLowerCase() === "theater").length;
+        const monthStreaming = monthMovies.filter(movie => (movie.type || "").trim().toLowerCase() === "streaming").length;
+        const monthBluray = monthMovies.filter(movie => normalizeMovieType(movie.type) === "blu-ray").length;
+        const monthDvd = monthMovies.filter(movie => normalizeMovieType(movie.type) === "dvd").length;
+
+        doc.setFontSize(14);
+        doc.text(m.label, 10, y); y += 6;
+        doc.setFontSize(11);
+        doc.text(`Movies: ${totalMonthMovies}`, 10, y); y += 5;
+        doc.text(`Theater: ${monthTheater}`, 10, y); y += 5;
+        doc.text(`Streaming: ${monthStreaming}`, 10, y); y += 5;
+        doc.text(`Blu-ray: ${monthBluray}`, 10, y); y += 5;
+        doc.text(`DVD: ${monthDvd}`, 10, y); y += 5;
+        doc.text(`Runtime: ${formatRuntime(totalMonthRuntime)}`, 10, y); y += 8;
+    });
+
+    doc.save("Yearly_Movie_Report.pdf");
+});
+</script>
+
+</body>
+</html>
