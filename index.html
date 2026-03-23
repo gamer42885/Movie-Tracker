@@ -22,6 +22,7 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,.15);
   border-radius: 12px;
   margin: 20px;
+  flex-wrap: wrap;
 }
 .topnav a {
   color: #fff;
@@ -468,6 +469,7 @@ function normalizeMovieType(type) {
   const value = (type || "").trim().toLowerCase();
   if (value === "digital") return "blu-ray";
   if (value === "blu-ray/dvd") return "blu-ray";
+  if (value === "movie") return "theater";
   return value;
 }
 
@@ -508,7 +510,8 @@ function updateDashboard() {
   document.getElementById("collectionBluray").textContent = collectionBluray;
   document.getElementById("collectionDvd").textContent = collectionDvd;
 
-  const thisMonthMovies = movies.filter(m => m.month === currentMonth);
+  /* THIS MONTH NOW USES FINISHED MOVIES ONLY */
+  const thisMonthMovies = movies.filter(m => m.month === currentMonth && m.ended);
 
   document.getElementById("monthMoviesCount").textContent =
     thisMonthMovies.filter(m => normalizeMovieType(m.type) === "theater").length;
@@ -523,28 +526,28 @@ function updateDashboard() {
     thisMonthMovies.filter(m => normalizeMovieType(m.type) === "dvd").length;
 
   document.getElementById("inProgressTheater").textContent =
-    thisMonthMovies.filter(m => m.started && !m.ended && normalizeMovieType(m.type) === "theater").length;
+    movies.filter(m => m.month === currentMonth && m.started && !m.ended && normalizeMovieType(m.type) === "theater").length;
 
   document.getElementById("inProgressStreaming").textContent =
-    thisMonthMovies.filter(m => m.started && !m.ended && normalizeMovieType(m.type) === "streaming").length;
+    movies.filter(m => m.month === currentMonth && m.started && !m.ended && normalizeMovieType(m.type) === "streaming").length;
 
   document.getElementById("inProgressBluray").textContent =
-    thisMonthMovies.filter(m => m.started && !m.ended && normalizeMovieType(m.type) === "blu-ray").length;
+    movies.filter(m => m.month === currentMonth && m.started && !m.ended && normalizeMovieType(m.type) === "blu-ray").length;
 
   document.getElementById("inProgressDvd").textContent =
-    thisMonthMovies.filter(m => m.started && !m.ended && normalizeMovieType(m.type) === "dvd").length;
+    movies.filter(m => m.month === currentMonth && m.started && !m.ended && normalizeMovieType(m.type) === "dvd").length;
 
   document.getElementById("finishedTheater").textContent =
-    thisMonthMovies.filter(m => m.ended && normalizeMovieType(m.type) === "theater").length;
+    movies.filter(m => m.month === currentMonth && m.ended && normalizeMovieType(m.type) === "theater").length;
 
   document.getElementById("finishedStreaming").textContent =
-    thisMonthMovies.filter(m => m.ended && normalizeMovieType(m.type) === "streaming").length;
+    movies.filter(m => m.month === currentMonth && m.ended && normalizeMovieType(m.type) === "streaming").length;
 
   document.getElementById("finishedBluray").textContent =
-    thisMonthMovies.filter(m => m.ended && normalizeMovieType(m.type) === "blu-ray").length;
+    movies.filter(m => m.month === currentMonth && m.ended && normalizeMovieType(m.type) === "blu-ray").length;
 
   document.getElementById("finishedDvd").textContent =
-    thisMonthMovies.filter(m => m.ended && normalizeMovieType(m.type) === "dvd").length;
+    movies.filter(m => m.month === currentMonth && m.ended && normalizeMovieType(m.type) === "dvd").length;
 
   populateMonths();
   renderMonth();
@@ -576,7 +579,7 @@ function populateMonths() {
 
 function renderMonth() {
   const selectedMonth = document.getElementById("monthSelect").value;
-  const movies = getMovies().filter(m => m.month === selectedMonth);
+  const movies = getMovies().filter(m => m.month === selectedMonth && m.ended);
 
   document.getElementById("monthLabel").textContent = monthLabelText(selectedMonth);
 
