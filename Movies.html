@@ -23,7 +23,6 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   border-radius: 12px;
   margin: 20px;
-  flex-wrap: wrap;
 }
 .topnav a {
   color: white;
@@ -161,7 +160,7 @@ input[type=file] {
 
 .movie-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
   margin-top: 12px;
 }
@@ -303,7 +302,7 @@ input[type=file] {
 
       <div class="form-grid">
         <input type="text" id="seriesName" placeholder="Collection / Franchise Name" required>
-        <input type="text" id="seriesAuthor" placeholder="Studio / Creator / Director" required>
+        <input type="text" id="seriesDirector" placeholder="Director" required>
         <div id="movieInputs" class="full"></div>
       </div>
 
@@ -340,14 +339,13 @@ input[type=file] {
     </div>
 
     <h3 style="margin-top:16px;">Search Collections / Movies</h3>
-    <input type="text" id="searchInput" placeholder="Search by collection, creator, movie, lead actor, or supporting actor">
+    <input type="text" id="searchInput" placeholder="Search by collection, movie title, leading actor, supporting actor, or director">
   </div>
 
   <div class="card-grid" id="seriesGrid"></div>
 </div>
 
 <script>
-// LocalStorage helpers
 function getMovieSeriesData() {
   return JSON.parse(localStorage.getItem('movieSeriesData') || '[]');
 }
@@ -369,6 +367,11 @@ function normalizeLegacyFormats(data) {
   data.forEach(series => {
     if (!series.books) return;
 
+    if (typeof series.director === "undefined") {
+      series.director = series.author || "";
+      changed = true;
+    }
+
     series.books.forEach(movie => {
       if (movie.format === "Digital") {
         movie.format = "Streaming";
@@ -378,20 +381,28 @@ function normalizeLegacyFormats(data) {
         changed = true;
       }
 
-      if (typeof movie.leadActor === "undefined") {
-        movie.leadActor = "";
+      if (typeof movie.leadingActor === "undefined") {
+        movie.leadingActor = movie.leadActor || "";
         changed = true;
       }
       if (typeof movie.supportingActor === "undefined") {
         movie.supportingActor = "";
         changed = true;
       }
+
+      if (typeof movie.leadActor !== "undefined") {
+        delete movie.leadActor;
+        changed = true;
+      }
     });
+
+    if (typeof series.author !== "undefined") {
+      delete series.author;
+      changed = true;
+    }
   });
 
-  if (changed) {
-    saveMovieSeriesData(data);
-  }
+  if (changed) saveMovieSeriesData(data);
 }
 
 function setFormatFilter(format) {
@@ -430,40 +441,38 @@ function createMovieInput() {
   div.className = 'movie-input form-grid';
   div.innerHTML = `
     <input type="text" placeholder="Movie Title" class="movieTitle">
+    <input type="text" placeholder="Leading Actor" class="movieLeadingActor">
+    <input type="text" placeholder="Supporting Actor" class="movieSupportingActor">
     <select class="movieFormat">
       <option value="Movie">Theater</option>
       <option value="Blu-ray">Blu-ray</option>
       <option value="DVD">DVD</option>
       <option value="Streaming">Streaming</option>
     </select>
-    <input type="text" placeholder="Lead Actor" class="movieLeadActor">
-    <input type="text" placeholder="Supporting Actor" class="movieSupportingActor">
     <input type="file" accept="image/*" class="movieCover">
   `;
   return div;
 }
 
-// Initial input
 document.getElementById('movieInputs').appendChild(createMovieInput());
 
 document.getElementById('addMovieBtn').addEventListener('click', () => {
   document.getElementById('movieInputs').appendChild(createMovieInput());
 });
 
-// Add new collection
 document.getElementById('addSeriesForm').addEventListener('submit', async e => {
   e.preventDefault();
 
   const name = document.getElementById('seriesName').value.trim();
-  const author = document.getElementById('seriesAuthor').value.trim();
+  const director = document.getElementById('seriesDirector').value.trim();
   const movieDivs = document.querySelectorAll('#movieInputs .movie-input');
   const movies = [];
 
   for (let div of movieDivs) {
     const title = div.querySelector('.movieTitle').value.trim();
-    const format = div.querySelector('.movieFormat').value;
-    const leadActor = div.querySelector('.movieLeadActor').value.trim();
+    const leadingActor = div.querySelector('.movieLeadingActor').value.trim();
     const supportingActor = div.querySelector('.movieSupportingActor').value.trim();
+    const format = div.querySelector('.movieFormat').value;
     const file = div.querySelector('.movieCover').files[0];
 
     if (title) {
@@ -475,17 +484,17 @@ document.getElementById('addSeriesForm').addEventListener('submit', async e => {
           })
         : "";
 
-      movies.push({ title, cover, format, leadActor, supportingActor });
+      movies.push({ title, leadingActor, supportingActor, cover, format });
     }
   }
 
-  if (!name || !author || !movies.length) {
-    alert("Please add a collection name, creator/studio, and at least one movie.");
+  if (!name || !director || !movies.length) {
+    alert("Please add a collection name, director, and at least one movie.");
     return;
   }
 
   const data = getMovieSeriesData();
-  data.push({ name, author, books: movies });
+  data.push({ name, director, books: movies });
   saveMovieSeriesData(data);
 
   document.getElementById('addSeriesForm').reset();
@@ -495,22 +504,21 @@ document.getElementById('addSeriesForm').addEventListener('submit', async e => {
   renderCards();
 });
 
-// Search
 document.getElementById('searchInput').addEventListener('input', renderCards);
 
 function filterSeries(series) {
   const query = document.getElementById('searchInput').value.trim().toLowerCase();
   if (!query) return true;
 
-  const nameMatch = series.name.toLowerCase().includes(query);
-  const authorMatch = series.author.toLowerCase().includes(query);
+  const collectionMatch = (series.name || "").toLowerCase().includes(query);
+  const directorMatch = (series.director || "").toLowerCase().includes(query);
   const movieMatch = (series.books || []).some(movie =>
     (movie.title || "").toLowerCase().includes(query) ||
-    (movie.leadActor || "").toLowerCase().includes(query) ||
+    (movie.leadingActor || "").toLowerCase().includes(query) ||
     (movie.supportingActor || "").toLowerCase().includes(query)
   );
 
-  return nameMatch || authorMatch || movieMatch;
+  return collectionMatch || directorMatch || movieMatch;
 }
 
 function escapeRegExp(str) {
@@ -534,7 +542,6 @@ function getFormatClass(format) {
   }
 }
 
-// Render all cards
 function renderCards() {
   const grid = document.getElementById('seriesGrid');
   grid.innerHTML = "";
@@ -555,8 +562,8 @@ function renderCards() {
 
     card.innerHTML = `
       <div class="series-info">
-        <div class="series-title">${highlightMatch(series.name)}</div>
-        <div>${highlightMatch(series.author)}</div>
+        <div class="series-title"><strong>Collection:</strong> ${highlightMatch(series.name)}</div>
+        <div><strong>Director:</strong> ${highlightMatch(series.director || "—")}</div>
         <span class="series-counter"></span><br>
         <button type="button" onclick="removeSeries(${sIndex})" style="background:#c0392b;">Remove Collection</button>
       </div>
@@ -579,8 +586,11 @@ function renderCards() {
         <small class="format-label ${getFormatClass(movie.format)}">${getDisplayFormat(movie.format)}</small>
         ${movie.cover ? `<br><img src="${movie.cover}" alt="${movie.title} poster">` : ""}
         <div class="movie-meta">
-          <div><strong>Lead Actor:</strong> ${highlightMatch(movie.leadActor || "—")}</div>
+          <div><strong>Collection:</strong> ${highlightMatch(series.name)}</div>
+          <div><strong>Movie Title:</strong> ${highlightMatch(movie.title)}</div>
+          <div><strong>Leading Actor:</strong> ${highlightMatch(movie.leadingActor || "—")}</div>
           <div><strong>Supporting Actor:</strong> ${highlightMatch(movie.supportingActor || "—")}</div>
+          <div><strong>Director:</strong> ${highlightMatch(series.director || "—")}</div>
         </div>
         <div class="movie-controls">
           <label>
@@ -612,7 +622,6 @@ function renderCards() {
   updateCounters();
 }
 
-// Checkbox logic
 function updateCheckbox(id) {
   const state = getMovieCheckboxState();
   const box = document.getElementById(id);
@@ -634,7 +643,6 @@ function handleWatched(watchedId, haveId, format) {
   updateCheckbox(haveId);
 }
 
-// Totals
 function updateCounters() {
   const data = getMovieSeriesData();
   const state = getMovieCheckboxState();
@@ -693,7 +701,6 @@ function updateCounters() {
   document.getElementById('totalMoviesStreaming').textContent = countStreaming;
 }
 
-// Delete
 function deleteMovie(s, b) {
   const data = getMovieSeriesData();
   data[s].books.splice(b, 1);
@@ -708,21 +715,20 @@ function removeSeries(s) {
   renderCards();
 }
 
-// Inline add movie
 async function addMovieInline(s, container) {
   const movieDiv = container.querySelector('.movie-input');
   const titleInput = movieDiv.querySelector('.movieTitle');
-  const formatSelect = movieDiv.querySelector('.movieFormat');
-  const leadActorInput = movieDiv.querySelector('.movieLeadActor');
+  const leadingActorInput = movieDiv.querySelector('.movieLeadingActor');
   const supportingActorInput = movieDiv.querySelector('.movieSupportingActor');
+  const formatSelect = movieDiv.querySelector('.movieFormat');
   const fileInput = movieDiv.querySelector('.movieCover');
 
   const title = titleInput.value.trim();
   if (!title) return alert("Enter a movie title.");
 
-  const format = formatSelect.value;
-  const leadActor = leadActorInput.value.trim();
+  const leadingActor = leadingActorInput.value.trim();
   const supportingActor = supportingActorInput.value.trim();
+  const format = formatSelect.value;
   let cover = "";
 
   if (fileInput.files[0]) {
@@ -734,7 +740,7 @@ async function addMovieInline(s, container) {
   }
 
   const data = getMovieSeriesData();
-  data[s].books.push({ title, cover, format, leadActor, supportingActor });
+  data[s].books.push({ title, leadingActor, supportingActor, cover, format });
   saveMovieSeriesData(data);
   renderCards();
 }
