@@ -466,17 +466,25 @@ function updateDashboard() {
   let collectionDvd = 0;
 
   seriesData.forEach((series, sIndex) => {
-    (series.books || []).forEach((movie, bIndex) => {
-      const haveId = `movie-have-${sIndex}-${bIndex}`;
-      if (checkboxState[haveId]) {
-        const type = matchesCollectionCardType(movie.format);
-        if (type === "movie") collectionMovies++;
-        else if (type === "streaming") collectionStreaming++;
-        else if (type === "dvd") collectionDvd++;
-        else collectionBluray++;
-      }
-    });
+  (series.books || []).forEach((movie, bIndex) => {
+    const haveId = `movie-have-${sIndex}-${bIndex}`;
+    const watchedId = `movie-watched-${sIndex}-${bIndex}`;
+
+    const type = matchesCollectionCardType(movie.format);
+
+    // 🎬 Theater → use WATCHED
+    if (type === "movie" && checkboxState[watchedId]) {
+      collectionMovies++;
+    }
+
+    // 📺💿📀 Others → still use HAVE
+    else if (checkboxState[haveId]) {
+      if (type === "streaming") collectionStreaming++;
+      else if (type === "dvd") collectionDvd++;
+      else collectionBluray++;
+    }
   });
+});
 
   document.getElementById("collectionMovies").textContent = collectionMovies;
   document.getElementById("collectionStreaming").textContent = collectionStreaming;
