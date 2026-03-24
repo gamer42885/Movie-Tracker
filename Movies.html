@@ -23,6 +23,7 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   border-radius: 12px;
   margin: 20px;
+  flex-wrap: wrap;
 }
 .topnav a {
   color: white;
@@ -273,6 +274,22 @@ input[type=file] {
   font-weight: 600;
 }
 
+.lookup-status {
+  font-size: 12px;
+  color: #555;
+  margin-top: -4px;
+  margin-bottom: 6px;
+}
+
+.lookup-cover-preview {
+  display: none;
+  width: 100px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #ddd;
+}
+
 @media (max-width: 600px) {
   .movie-card {
     font-size: 14px;
@@ -301,8 +318,8 @@ input[type=file] {
       <h3>Add New Collection / Franchise</h3>
 
       <div class="form-grid">
-        <input type="text" id="seriesName" placeholder="Collection / Franchise Name" required>
-        <input type="text" id="seriesDirector" placeholder="Director" required>
+        <input type="text" id="seriesName" placeholder="Collection / Franchise Name">
+        <input type="text" id="seriesDirector" placeholder="Director">
         <div id="movieInputs" class="full"></div>
       </div>
 
@@ -346,6 +363,12 @@ input[type=file] {
 </div>
 
 <script>
+/*
+  Optional: add your Google Books API key below.
+  The lookup can work without one in many cases, but using a key is more reliable.
+*/
+const GOOGLE_BOOKS_API_KEY = "";
+
 function getMovieSeriesData() {
   return JSON.parse(localStorage.getItem('movieSeriesData') || '[]');
 }
@@ -436,6 +459,112 @@ function isOwnedFormat(format) {
   return format === "Blu-ray" || format === "DVD";
 }
 
+function normalizeTitleForMatch(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function pickBestGoogleBookMatch(items, title) {
+  if (!Array.isArray(items) || !items.length) return null;
+
+  const normalizedQuery = normalizeTitleForMatch(title);
+
+  let exact = items.find(item => {
+    const bookTitle = normalizeTitleForMatch(item.volumeInfo?.title || "");
+    return bookTitle === normalizedQuery;
+  });
+  if (exact) return exact;
+
+  let startsWith = items.find(item => {
+    const bookTitle = normalizeTitleForMatch(item.volumeInfo?.title || "");
+    return bookTitle.startsWith(normalizedQuery) || normalizedQuery.startsWith(bookTitle);
+  });
+  if (startsWith) return startsWith;
+
+  return items[0];
+}
+
+async function lookupMovieData(title) {
+  if (!title) throw new Error("Enter a title first.");
+
+  const query = `intitle:${title}`;
+  let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`;
+
+  if (GOOGLE_BOOKS_API_KEY.trim()) {
+    url += `&key=${encodeURIComponent(GOOGLE_BOOKS_API_KEY.trim())}`;
+  }
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Google lookup failed.");
+  }
+
+  const data = await response.json();
+  const best = pickBestGoogleBookMatch(data.items || [], title);
+
+  if (!best) {
+    throw new Error("Title not found.");
+  }
+
+  return best;
+}
+
+async function handleLookup(button) {
+  const wrapper = button.closest('.movie-input');
+  if (!wrapper) return;
+
+  const titleInput = wrapper.querySelector('.movieTitle');
+  const leadingActorInput = wrapper.querySelector('.movieLeadingActor');
+  const supportingActorInput = wrapper.querySelector('.movieSupportingActor');
+  const coverPreview = wrapper.querySelector('.lookup-cover-preview');
+  const status = wrapper.querySelector('.lookup-status');
+  const title = titleInput.value.trim();
+
+  try {
+    status.textContent = "Looking up book cover...";
+
+    const item = await lookupMovieData(title);
+    const info = item.volumeInfo || {};
+
+    if (info.title) {
+      titleInput.value = info.title;
+    }
+
+    const authors = info.authors || [];
+    if (authors.length) {
+      if (!leadingActorInput.value.trim()) {
+        leadingActorInput.value = authors[0] || "";
+      }
+      if (!supportingActorInput.value.trim()) {
+        supportingActorInput.value = authors[1] || "";
+      }
+    }
+
+    const thumb =
+      info.imageLinks?.thumbnail ||
+      info.imageLinks?.smallThumbnail ||
+      "";
+
+    if (thumb) {
+      const cleanThumb = thumb.replace(/^http:\/\//i, "https://");
+      coverPreview.src = cleanThumb;
+      coverPreview.style.display = "block";
+      coverPreview.dataset.remotePoster = cleanThumb;
+    } else {
+      coverPreview.removeAttribute("src");
+      coverPreview.style.display = "none";
+      delete coverPreview.dataset.remotePoster;
+    }
+
+    status.textContent = "Autofill complete.";
+  } catch (error) {
+    status.textContent = error.message || "Google lookup failed.";
+  }
+}
+
 function createMovieInput() {
   const div = document.createElement('div');
   div.className = 'movie-input form-grid';
@@ -450,7 +579,14 @@ function createMovieInput() {
       <option value="Streaming">Streaming</option>
     </select>
     <input type="file" accept="image/*" class="movieCover">
+    <button type="button" class="lookupBtn">Google Lookup</button>
+    <div class="lookup-status full"></div>
+    <img class="lookup-cover-preview full" alt="Poster preview">
   `;
+
+  const lookupBtn = div.querySelector('.lookupBtn');
+  lookupBtn.addEventListener('click', () => handleLookup(lookupBtn));
+
   return div;
 }
 
@@ -474,22 +610,27 @@ document.getElementById('addSeriesForm').addEventListener('submit', async e => {
     const supportingActor = div.querySelector('.movieSupportingActor').value.trim();
     const format = div.querySelector('.movieFormat').value;
     const file = div.querySelector('.movieCover').files[0];
+    const remotePoster = div.querySelector('.lookup-cover-preview')?.dataset.remotePoster || "";
 
     if (title) {
-      const cover = file
-        ? await new Promise(res => {
-            const r = new FileReader();
-            r.onload = () => res(r.result);
-            r.readAsDataURL(file);
-          })
-        : "";
+      let cover = "";
+
+      if (file) {
+        cover = await new Promise(res => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.readAsDataURL(file);
+        });
+      } else if (remotePoster) {
+        cover = remotePoster;
+      }
 
       movies.push({ title, leadingActor, supportingActor, cover, format });
     }
   }
 
-  if (!name || !director || !movies.length) {
-    alert("Please add a collection name, director, and at least one movie.");
+  if (!movies.length) {
+    alert("Please add at least one movie.");
     return;
   }
 
@@ -562,7 +703,7 @@ function renderCards() {
 
     card.innerHTML = `
       <div class="series-info">
-        <div class="series-title"><strong>Collection:</strong> ${highlightMatch(series.name)}</div>
+        <div class="series-title"><strong>Collection:</strong> ${highlightMatch(series.name || "—")}</div>
         <div><strong>Director:</strong> ${highlightMatch(series.director || "—")}</div>
         <span class="series-counter"></span><br>
         <button type="button" onclick="removeSeries(${sIndex})" style="background:#c0392b;">Remove Collection</button>
@@ -586,7 +727,7 @@ function renderCards() {
         <small class="format-label ${getFormatClass(movie.format)}">${getDisplayFormat(movie.format)}</small>
         ${movie.cover ? `<br><img src="${movie.cover}" alt="${movie.title} poster">` : ""}
         <div class="movie-meta">
-          <div><strong>Collection:</strong> ${highlightMatch(series.name)}</div>
+          <div><strong>Collection:</strong> ${highlightMatch(series.name || "—")}</div>
           <div><strong>Movie Title:</strong> ${highlightMatch(movie.title)}</div>
           <div><strong>Leading Actor:</strong> ${highlightMatch(movie.leadingActor || "—")}</div>
           <div><strong>Supporting Actor:</strong> ${highlightMatch(movie.supportingActor || "—")}</div>
@@ -722,6 +863,7 @@ async function addMovieInline(s, container) {
   const supportingActorInput = movieDiv.querySelector('.movieSupportingActor');
   const formatSelect = movieDiv.querySelector('.movieFormat');
   const fileInput = movieDiv.querySelector('.movieCover');
+  const remotePoster = movieDiv.querySelector('.lookup-cover-preview')?.dataset.remotePoster || "";
 
   const title = titleInput.value.trim();
   if (!title) return alert("Enter a movie title.");
@@ -737,6 +879,8 @@ async function addMovieInline(s, container) {
       r.onload = () => res(r.result);
       r.readAsDataURL(fileInput.files[0]);
     });
+  } else if (remotePoster) {
+    cover = remotePoster;
   }
 
   const data = getMovieSeriesData();
