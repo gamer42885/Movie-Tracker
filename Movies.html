@@ -280,15 +280,6 @@ input[type=file] {
   margin-bottom: 6px;
 }
 
-.lookup-cover-preview {
-  display: none;
-  width: 100px;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 8px;
-  background: #ddd;
-}
-
 @media (max-width: 600px) {
   .movie-card {
     font-size: 14px;
@@ -516,8 +507,6 @@ async function handleLookup(button) {
   if (!wrapper) return;
 
   const titleInput = wrapper.querySelector('.movieTitle');
-  const leadingActorInput = wrapper.querySelector('.movieLeadingActor');
-  const supportingActorInput = wrapper.querySelector('.movieSupportingActor');
   const coverPreview = wrapper.querySelector('.lookup-cover-preview');
   const status = wrapper.querySelector('.lookup-status');
   const title = titleInput.value.trim();
@@ -528,18 +517,8 @@ async function handleLookup(button) {
     const item = await lookupMovieData(title);
     const info = item.volumeInfo || {};
 
-    if (info.title) {
+    if (!titleInput.value.trim() && info.title) {
       titleInput.value = info.title;
-    }
-
-    const authors = info.authors || [];
-    if (authors.length) {
-      if (!leadingActorInput.value.trim()) {
-        leadingActorInput.value = authors[0] || "";
-      }
-      if (!supportingActorInput.value.trim()) {
-        supportingActorInput.value = authors[1] || "";
-      }
     }
 
     const thumb =
@@ -548,17 +527,16 @@ async function handleLookup(button) {
       "";
 
     if (thumb) {
-      const cleanThumb = thumb.replace(/^http:\/\//i, "https://");
-      coverPreview.src = cleanThumb;
+      coverPreview.src = thumb.replace(/^http:\/\//i, "https://");
       coverPreview.style.display = "block";
-      coverPreview.dataset.remotePoster = cleanThumb;
+      coverPreview.dataset.remotePoster = coverPreview.src;
     } else {
       coverPreview.removeAttribute("src");
       coverPreview.style.display = "none";
       delete coverPreview.dataset.remotePoster;
     }
 
-    status.textContent = "Autofill complete.";
+    status.textContent = "Book cover found.";
   } catch (error) {
     status.textContent = error.message || "Google lookup failed.";
   }
@@ -580,7 +558,7 @@ function createMovieInput() {
     <input type="file" accept="image/*" class="movieCover">
     <button type="button" class="lookupBtn">Google Lookup</button>
     <div class="lookup-status full"></div>
-    <img class="lookup-cover-preview full" alt="Poster preview">
+    <img class="lookup-cover-preview full" style="display:none; width:100px; height:150px; object-fit:cover; border-radius:8px; background:#ddd;" alt="Poster preview">
   `;
 
   const lookupBtn = div.querySelector('.lookupBtn');
