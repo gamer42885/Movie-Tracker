@@ -696,6 +696,7 @@ function renderCards() {
             <input type="checkbox" id="${watchedId}" ${state[watchedId] ? "checked" : ""} onchange="handleWatched('${watchedId}','${haveId}','${movie.format}')">
             Watched
           </label>
+          <button type="button" onclick="editMovie(${sIndex},${bIndex})" style="background:#f39c12;">Edit</button>
           <button type="button" onclick="deleteMovie(${sIndex},${bIndex})" style="background:#c0392b;">Delete</button>
         </div>
       `;
@@ -703,6 +704,9 @@ function renderCards() {
     });
 
     const inlineForm = card.querySelector('.add-movie-inline');
+    inlineForm.dataset.seriesIndex = sIndex;
+    inlineForm.dataset.editIndex = "";
+
     inlineForm.appendChild(createMovieInput());
 
     const addBtn = document.createElement('button');
@@ -710,6 +714,14 @@ function renderCards() {
     addBtn.textContent = "Add Movie";
     addBtn.onclick = () => addMovieInline(sIndex, inlineForm);
     inlineForm.appendChild(addBtn);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = "button";
+    cancelBtn.textContent = "Cancel Edit";
+    cancelBtn.style.background = "#777";
+    cancelBtn.style.display = "none";
+    cancelBtn.onclick = () => cancelEdit(inlineForm, sIndex);
+    inlineForm.appendChild(cancelBtn);
 
     grid.appendChild(card);
   });
@@ -817,7 +829,8 @@ async function addMovieInline(s, container) {
   const supportingActorInput = movieDiv.querySelector('.movieSupportingActor');
   const formatSelect = movieDiv.querySelector('.movieFormat');
   const fileInput = movieDiv.querySelector('.movieCover');
-  const remotePoster = movieDiv.querySelector('.lookup-cover-preview')?.dataset.remotePoster || "";
+  const previewImg = movieDiv.querySelector('.lookup-cover-preview');
+  const remotePoster = previewImg?.dataset.remotePoster || "";
 
   const title = titleInput.value.trim();
   if (!title) return alert("Enter a movie title.");
@@ -825,7 +838,10 @@ async function addMovieInline(s, container) {
   const leadingActor = leadingActorInput.value.trim();
   const supportingActor = supportingActorInput.value.trim();
   const format = formatSelect.value;
+
   let cover = "";
+  const data = getMovieSeriesData();
+  const editIndex = container.dataset.editIndex;
 
   if (fileInput.files[0]) {
     cover = await new Promise(res => {
@@ -835,12 +851,87 @@ async function addMovieInline(s, container) {
     });
   } else if (remotePoster) {
     cover = remotePoster;
+  } else if (editIndex !== "") {
+    cover = data[s].books[Number(editIndex)].cover || "";
   }
 
-  const data = getMovieSeriesData();
-  data[s].books.push({ title, leadingActor, supportingActor, cover, format });
+  const moviePayload = { title, leadingActor, supportingActor, cover, format };
+
+  if (editIndex !== "") {
+    data[s].books[Number(editIndex)] = moviePayload;
+  } else {
+    data[s].books.push(moviePayload);
+  }
+
   saveMovieSeriesData(data);
   renderCards();
+}
+
+function editMovie(s, b) {
+  const data = getMovieSeriesData();
+  const movie = data[s]?.books?.[b];
+  if (!movie) return;
+
+  renderCards();
+
+  const container = document.querySelector(`.add-movie-inline[data-series-index="${s}"]`);
+  if (!container) return;
+
+  const movieDiv = container.querySelector('.movie-input');
+  const titleInput = movieDiv.querySelector('.movieTitle');
+  const leadingActorInput = movieDiv.querySelector('.movieLeadingActor');
+  const supportingActorInput = movieDiv.querySelector('.movieSupportingActor');
+  const formatSelect = movieDiv.querySelector('.movieFormat');
+  const previewImg = movieDiv.querySelector('.lookup-cover-preview');
+
+  titleInput.value = movie.title || "";
+  leadingActorInput.value = movie.leadingActor || "";
+  supportingActorInput.value = movie.supportingActor || "";
+  formatSelect.value = movie.format || "Movie";
+
+  if (movie.cover) {
+    previewImg.src = movie.cover;
+    previewImg.style.display = "block";
+    previewImg.dataset.remotePoster = movie.cover;
+  } else {
+    previewImg.removeAttribute("src");
+    previewImg.style.display = "none";
+    delete previewImg.dataset.remotePoster;
+  }
+
+  container.dataset.editIndex = b;
+
+  const buttons = container.querySelectorAll('button');
+  const addBtn = buttons[0];
+  const cancelBtn = buttons[1];
+
+  addBtn.textContent = "Save Changes";
+  cancelBtn.style.display = "inline-block";
+
+  container.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function cancelEdit(container, s) {
+  container.dataset.editIndex = "";
+
+  const movieDiv = container.querySelector('.movie-input');
+  movieDiv.querySelector('.movieTitle').value = "";
+  movieDiv.querySelector('.movieLeadingActor').value = "";
+  movieDiv.querySelector('.movieSupportingActor').value = "";
+  movieDiv.querySelector('.movieFormat').value = "Movie";
+  movieDiv.querySelector('.movieCover').value = "";
+
+  const previewImg = movieDiv.querySelector('.lookup-cover-preview');
+  previewImg.removeAttribute("src");
+  previewImg.style.display = "none";
+  delete previewImg.dataset.remotePoster;
+
+  const buttons = container.querySelectorAll('button');
+  const addBtn = buttons[0];
+  const cancelBtn = buttons[1];
+
+  addBtn.textContent = "Add Movie";
+  cancelBtn.style.display = "none";
 }
 
 document.addEventListener('DOMContentLoaded', () => {
