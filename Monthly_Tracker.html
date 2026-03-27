@@ -47,7 +47,11 @@ body {
 .topnav a:hover { background: rgba(255, 255, 255, 0.15); }
 .topnav a:hover::after { width: 80%; }
 
-.container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+.container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
 button {
     padding: 8px 12px;
@@ -69,19 +73,33 @@ button:hover { opacity: 0.92; }
     margin-bottom: 20px;
 }
 .month-controls label { flex: 0 0 auto; }
-.month-controls select { flex: 1 1 220px; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
+.month-controls select {
+    flex: 1 1 220px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
 .month-controls button { flex: 0 0 auto; }
+
+.form-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.08);
+    margin-bottom: 20px;
+}
 
 #movieForm {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 10px 20px;
-    background: #fff;
-    padding: 16px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
+
+#movieForm h3 {
+    grid-column: 1 / -1;
+    margin: 0 0 8px 0;
+}
+
 #movieForm input,
 #movieForm select,
 #movieForm button {
@@ -91,22 +109,31 @@ button:hover { opacity: 0.92; }
     border-radius: 8px;
     border: 1px solid #ccc;
 }
-#cover, #movieForm button[type="submit"] {
-    grid-column: span 2;
+
+.lookup-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: stretch;
 }
-#movieForm button[type="submit"] {
+.lookup-row input {
+    min-width: 0;
+}
+.lookup-row button {
+    width: auto;
+    min-width: 140px;
+    margin: 0;
     border: none;
+    background: #2980b9;
 }
 
-.form-card {
-    background:#fff;
-    border-radius:14px;
-    padding:20px;
-    box-shadow:0 6px 18px rgba(0,0,0,.08);
-    margin-bottom: 20px;
+#cover {
+    grid-column: 1 / -1;
 }
 
 .series-form-actions {
+    grid-column: 1 / -1;
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
@@ -119,6 +146,7 @@ button:hover { opacity: 0.92; }
     flex: 1 1 0;
     min-width: 0;
     margin: 0;
+    border: none;
 }
 
 .series-form-actions #cancelMovieEditBtn {
@@ -172,12 +200,16 @@ button:hover { opacity: 0.92; }
 }
 .movie-details { font-size: 14px; line-height: 1.5; }
 .movie-details strong { font-size: 17px; }
+
 .movie-controls {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
-.movie-controls button { font-size: 12px; padding: 6px; }
+.movie-controls button {
+    font-size: 12px;
+    padding: 6px;
+}
 
 .type-badge {
     display: inline-block;
@@ -190,11 +222,16 @@ button:hover { opacity: 0.92; }
 .type-theater { background: #ffe082; }
 .type-streaming { background: #80cbc4; }
 .type-bluray { background: #90caf9; }
-.type-dvd { background: #ffe082; }
+.type-dvd { background: #ffccbc; }
 
 @media(max-width:700px){
-    #movieForm { grid-template-columns: 1fr; }
-    #cover, #saveMovieBtn { grid-column: 1; }
+    #movieForm {
+        grid-template-columns: 1fr;
+    }
+
+    .lookup-row {
+        grid-template-columns: 1fr;
+    }
 
     .series-form-actions {
         flex-direction: column;
@@ -211,9 +248,8 @@ button:hover { opacity: 0.92; }
         grid-template-columns: 85px 1fr;
         grid-template-rows: auto auto;
     }
+
     .movie-controls {
-
-
         flex-direction: row;
         gap: 6px;
         justify-content: flex-start;
@@ -245,19 +281,27 @@ button:hover { opacity: 0.92; }
     <div class="form-card">
         <form id="movieForm">
             <h3 id="movieFormTitle">Add New Movie</h3>
-            <input type="text" id="title" placeholder="Movie Title" required>
+
+            <div class="lookup-row">
+                <input type="text" id="title" placeholder="Movie Title" required>
+                <button type="button" id="lookupMovieBtn">Lookup Movie</button>
+            </div>
+
             <input type="text" id="director" placeholder="Director / Studio">
             <input type="text" id="released" placeholder="Released (e.g. 2024 or Jul 12, 2024)">
             <input type="text" id="runtime" placeholder="Runtime (e.g. 2h 15m)">
             <input type="date" id="dateStarted">
             <input type="date" id="dateEnded">
+
             <select id="type">
                 <option>Theater</option>
                 <option>Streaming</option>
                 <option>Blu-ray</option>
                 <option>DVD</option>
             </select>
+
             <input type="text" id="genres" placeholder="Genres / Franchise (comma separated)">
+
             <select id="rating">
                 <option value="">Select Rating</option>
                 <option value="1">1 ★</option>
@@ -266,7 +310,9 @@ button:hover { opacity: 0.92; }
                 <option value="4">4 ★★★★</option>
                 <option value="5">5 ★★★★★</option>
             </select>
+
             <input type="file" id="cover" accept="image/*">
+
             <div class="series-form-actions">
                 <button type="submit" id="saveMovieBtn">Add Movie</button>
                 <button type="button" id="cancelMovieEditBtn">Cancel Edit</button>
@@ -302,6 +348,7 @@ const movieForm = document.getElementById("movieForm");
 const movieFormTitle = document.getElementById("movieFormTitle");
 const saveMovieBtn = document.getElementById("saveMovieBtn");
 const cancelMovieEditBtn = document.getElementById("cancelMovieEditBtn");
+const lookupMovieBtn = document.getElementById("lookupMovieBtn");
 
 let editIndex = null;
 
@@ -312,6 +359,7 @@ function resetMovieForm() {
     movieFormTitle.textContent = "Add New Movie";
     saveMovieBtn.textContent = "Add Movie";
     cancelMovieEditBtn.style.display = "none";
+    delete cover.dataset.lookupCover;
 }
 
 function getMovies() {
@@ -383,7 +431,12 @@ function normalizeStoredMovies() {
     let changed = false;
     movies.forEach(movie => {
         const normalized = normalizeMovieType(movie.type);
-        const proper = normalized === "blu-ray" ? "Blu-ray" : normalized === "dvd" ? "DVD" : normalized === "streaming" ? "Streaming" : "Theater";
+        const proper =
+            normalized === "blu-ray" ? "Blu-ray" :
+            normalized === "dvd" ? "DVD" :
+            normalized === "streaming" ? "Streaming" :
+            "Theater";
+
         if ((movie.type || "") !== proper) {
             movie.type = proper;
             changed = true;
@@ -399,6 +452,60 @@ function getTypeClass(value) {
     if (v === "dvd") return "type-dvd";
     return "type-bluray";
 }
+
+// ---------------- Movie Lookup ----------------
+async function lookupMovie() {
+    const movieTitle = title.value.trim();
+
+    if (!movieTitle) {
+        alert("Enter a movie title first.");
+        return;
+    }
+
+    const apiKey = "a5372e78";
+
+    try {
+        lookupMovieBtn.disabled = true;
+        lookupMovieBtn.textContent = "Looking up...";
+
+        const res = await fetch(`https://www.omdbapi.com/?apikey=${apiKey}&t=${encodeURIComponent(movieTitle)}`);
+        const data = await res.json();
+
+        if (!data || data.Response === "False") {
+            alert("Movie not found.");
+            return;
+        }
+
+        title.value = data.Title || title.value;
+        director.value = data.Director && data.Director !== "N/A" ? data.Director : director.value;
+        released.value = data.Released && data.Released !== "N/A" ? data.Released : released.value;
+        runtime.value = data.Runtime && data.Runtime !== "N/A" ? data.Runtime : runtime.value;
+        genres.value = data.Genre && data.Genre !== "N/A" ? data.Genre : genres.value;
+
+        if (data.Poster && data.Poster !== "N/A") {
+            try {
+                const imgRes = await fetch(data.Poster);
+                const blob = await imgRes.blob();
+
+                const reader = new FileReader();
+                reader.onloadend = function () {
+                    cover.dataset.lookupCover = reader.result;
+                };
+                reader.readAsDataURL(blob);
+            } catch (e) {
+                console.log("Poster could not be loaded.");
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Movie lookup failed.");
+    } finally {
+        lookupMovieBtn.disabled = false;
+        lookupMovieBtn.textContent = "Lookup Movie";
+    }
+}
+
+lookupMovieBtn.addEventListener("click", lookupMovie);
 
 // ---------------- Month Management ----------------
 const currentDate = new Date();
@@ -496,7 +603,11 @@ movieForm.onsubmit = function(e) {
     const file = cover.files[0];
 
     const saveData = (coverData) => {
-        if (coverData) movie.cover = coverData;
+        if (coverData) {
+            movie.cover = coverData;
+        } else if (cover.dataset.lookupCover) {
+            movie.cover = cover.dataset.lookupCover;
+        }
 
         if (editIndex !== null) {
             movie.cover = movie.cover || movies[editIndex].cover || "";
@@ -534,6 +645,7 @@ function editMovie(movie, index) {
     movieFormTitle.textContent = "Edit Movie";
     saveMovieBtn.textContent = "Save Movie Changes";
     cancelMovieEditBtn.style.display = "inline-block";
+    delete cover.dataset.lookupCover;
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
