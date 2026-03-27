@@ -98,6 +98,34 @@ button:hover { opacity: 0.92; }
     border: none;
 }
 
+.form-card {
+    background:#fff;
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+    margin-bottom: 20px;
+}
+
+.series-form-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: stretch;
+    margin-top: 6px;
+}
+
+.series-form-actions #saveMovieBtn,
+.series-form-actions #cancelMovieEditBtn {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+}
+
+.series-form-actions #cancelMovieEditBtn {
+    background: #757575;
+    display: none;
+}
+
 .stats-wrap {
     display: flex;
     justify-content: space-between;
@@ -166,7 +194,19 @@ button:hover { opacity: 0.92; }
 
 @media(max-width:700px){
     #movieForm { grid-template-columns: 1fr; }
-    #cover, #movieForm button[type="submit"] { grid-column: 1; }
+    #cover, #saveMovieBtn { grid-column: 1; }
+
+    .series-form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .series-form-actions #saveMovieBtn,
+    .series-form-actions #cancelMovieEditBtn {
+        width: 100%;
+        flex: none;
+    }
+
     .movie-card {
         grid-template-columns: 85px 1fr;
         grid-template-rows: auto auto;
@@ -202,32 +242,37 @@ button:hover { opacity: 0.92; }
         <button id="deleteMonthBtn" style="background:#c0392b;">Delete Month</button>
     </div>
 
-    <h3>Add / Edit Movie</h3>
-    <form id="movieForm">
-        <input type="text" id="title" placeholder="Movie Title" required>
-        <input type="text" id="director" placeholder="Director / Studio">
-        <input type="text" id="released" placeholder="Released (e.g. 2024 or Jul 12, 2024)">
-        <input type="text" id="runtime" placeholder="Runtime (e.g. 2h 15m)">
-        <input type="date" id="dateStarted">
-        <input type="date" id="dateEnded">
-        <select id="type">
-            <option>Theater</option>
-            <option>Streaming</option>
-            <option>Blu-ray</option>
-            <option>DVD</option>
-        </select>
-        <input type="text" id="genres" placeholder="Genres / Franchise (comma separated)">
-        <select id="rating">
-            <option value="">Select Rating</option>
-            <option value="1">1 ★</option>
-            <option value="2">2 ★★</option>
-            <option value="3">3 ★★★</option>
-            <option value="4">4 ★★★★</option>
-            <option value="5">5 ★★★★★</option>
-        </select>
-        <input type="file" id="cover" accept="image/*">
-        <button type="submit">Save Movie</button>
-    </form>
+    <div class="form-card">
+        <form id="movieForm">
+            <h3 id="movieFormTitle">Add New Movie</h3>
+            <input type="text" id="title" placeholder="Movie Title" required>
+            <input type="text" id="director" placeholder="Director / Studio">
+            <input type="text" id="released" placeholder="Released (e.g. 2024 or Jul 12, 2024)">
+            <input type="text" id="runtime" placeholder="Runtime (e.g. 2h 15m)">
+            <input type="date" id="dateStarted">
+            <input type="date" id="dateEnded">
+            <select id="type">
+                <option>Theater</option>
+                <option>Streaming</option>
+                <option>Blu-ray</option>
+                <option>DVD</option>
+            </select>
+            <input type="text" id="genres" placeholder="Genres / Franchise (comma separated)">
+            <select id="rating">
+                <option value="">Select Rating</option>
+                <option value="1">1 ★</option>
+                <option value="2">2 ★★</option>
+                <option value="3">3 ★★★</option>
+                <option value="4">4 ★★★★</option>
+                <option value="5">5 ★★★★★</option>
+            </select>
+            <input type="file" id="cover" accept="image/*">
+            <div class="series-form-actions">
+                <button type="submit" id="saveMovieBtn">Add Movie</button>
+                <button type="button" id="cancelMovieEditBtn">Cancel Edit</button>
+            </div>
+        </form>
+    </div>
 
     <h3>Watch Stats & Export</h3>
     <div class="stats-wrap">
@@ -253,8 +298,21 @@ const genres = document.getElementById("genres");
 const rating = document.getElementById("rating");
 const cover = document.getElementById("cover");
 const stats = document.getElementById("stats");
+const movieForm = document.getElementById("movieForm");
+const movieFormTitle = document.getElementById("movieFormTitle");
+const saveMovieBtn = document.getElementById("saveMovieBtn");
+const cancelMovieEditBtn = document.getElementById("cancelMovieEditBtn");
 
 let editIndex = null;
+
+function resetMovieForm() {
+    editIndex = null;
+    movieForm.reset();
+    rating.value = "";
+    movieFormTitle.textContent = "Add New Movie";
+    saveMovieBtn.textContent = "Add Movie";
+    cancelMovieEditBtn.style.display = "none";
+}
 
 function getMovies() {
     return JSON.parse(localStorage.getItem("movies")) || [];
@@ -415,7 +473,7 @@ document.getElementById("deleteMonthBtn").onclick = () => {
 };
 
 // ---------------- Add / Edit Movie ----------------
-document.getElementById("movieForm").onsubmit = function(e) {
+movieForm.onsubmit = function(e) {
     e.preventDefault();
 
     const month = monthSelect.value;
@@ -449,8 +507,7 @@ document.getElementById("movieForm").onsubmit = function(e) {
         }
 
         saveMovies(movies);
-        this.reset();
-        rating.value = "";
+        resetMovieForm();
         displayMovies();
     };
 
@@ -474,6 +531,9 @@ function editMovie(movie, index) {
     type.value = movie.type || "Theater";
     genres.value = movie.genres || "";
     rating.value = movie.rating || "";
+    movieFormTitle.textContent = "Edit Movie";
+    saveMovieBtn.textContent = "Save Movie Changes";
+    cancelMovieEditBtn.style.display = "inline-block";
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -703,9 +763,12 @@ document.getElementById("exportPdfBtn").onclick = function() {
     doc.save("Monthly_Movie_Report.pdf");
 };
 
+cancelMovieEditBtn.addEventListener("click", resetMovieForm);
+
 // ---------------- Init ----------------
 monthSelect.onchange = displayMovies;
 loadMonths();
+resetMovieForm();
 displayMovies();
 </script>
 </body>
