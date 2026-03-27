@@ -314,7 +314,8 @@ input[type=file] {
       </div>
 
       <button type="button" id="addMovieBtn">+ Add Another Title</button>
-      <button type="submit">Add Collection</button>
+      <button type="submit" id="seriesSubmitBtn">Add Collection</button>
+      <button type="button" id="cancelSeriesEditBtn" style="display:none; background:#777;">Cancel Edit</button>
     </form>
   </div>
 
@@ -373,6 +374,7 @@ function saveMovieCheckboxState(state) {
 }
 
 let currentFormatFilter = "All";
+let editSeriesIndex = null;
 
 function normalizeLegacyFormats(data) {
   let changed = false;
@@ -577,10 +579,18 @@ document.getElementById('addSeriesForm').addEventListener('submit', async e => {
         });
       } else if (remotePoster) {
         cover = remotePoster;
+      } else if (editSeriesIndex !== null) {
+        const existingMovie = getMovieSeriesData()[editSeriesIndex]?.books?.[movies.length];
+        cover = existingMovie?.cover || "";
       }
 
       movies.push({ title, leadingActor, supportingActor, cover, format });
     }
+  }
+
+  if (!name) {
+    alert("Please enter a collection name.");
+    return;
   }
 
   if (!movies.length) {
@@ -589,13 +599,15 @@ document.getElementById('addSeriesForm').addEventListener('submit', async e => {
   }
 
   const data = getMovieSeriesData();
-  data.push({ name, director, books: movies });
+
+  if (editSeriesIndex !== null) {
+    data[editSeriesIndex] = { name, director, books: movies };
+  } else {
+    data.push({ name, director, books: movies });
+  }
+
   saveMovieSeriesData(data);
-
-  document.getElementById('addSeriesForm').reset();
-  document.getElementById('movieInputs').innerHTML = "";
-  document.getElementById('movieInputs').appendChild(createMovieInput());
-
+  resetSeriesForm();
   renderCards();
 });
 
@@ -660,6 +672,7 @@ function renderCards() {
         <div class="series-title"><strong>Collection:</strong> ${highlightMatch(series.name || "—")}</div>
         <div><strong>Director:</strong> ${highlightMatch(series.director || "—")}</div>
         <span class="series-counter"></span><br>
+        <button type="button" onclick="editSeries(${sIndex})" style="background:#f39c12;">Edit Collection</button>
         <button type="button" onclick="removeSeries(${sIndex})" style="background:#c0392b;">Remove Collection</button>
       </div>
       <div class="movie-grid" id="movie-grid-${sIndex}"></div>
@@ -819,6 +832,13 @@ function removeSeries(s) {
   const data = getMovieSeriesData();
   data.splice(s, 1);
   saveMovieSeriesData(data);
+
+  if (editSeriesIndex === s) {
+    resetSeriesForm();
+  } else if (editSeriesIndex !== null && editSeriesIndex > s) {
+    editSeriesIndex--;
+  }
+
   renderCards();
 }
 
@@ -933,6 +953,54 @@ function cancelEdit(container, s) {
   addBtn.textContent = "Add Movie";
   cancelBtn.style.display = "none";
 }
+
+
+function resetSeriesForm() {
+  editSeriesIndex = null;
+  document.getElementById('addSeriesForm').reset();
+  document.getElementById('movieInputs').innerHTML = "";
+  document.getElementById('movieInputs').appendChild(createMovieInput());
+  document.getElementById('seriesSubmitBtn').textContent = "Add Collection";
+  document.getElementById('cancelSeriesEditBtn').style.display = "none";
+}
+
+function editSeries(s) {
+  const data = getMovieSeriesData();
+  const series = data[s];
+  if (!series) return;
+
+  editSeriesIndex = s;
+  document.getElementById('seriesName').value = series.name || "";
+  document.getElementById('seriesDirector').value = series.director || "";
+  document.getElementById('movieInputs').innerHTML = "";
+
+  (series.books || []).forEach(movie => {
+    const movieInput = createMovieInput();
+    movieInput.querySelector('.movieTitle').value = movie.title || "";
+    movieInput.querySelector('.movieLeadingActor').value = movie.leadingActor || "";
+    movieInput.querySelector('.movieSupportingActor').value = movie.supportingActor || "";
+    movieInput.querySelector('.movieFormat').value = movie.format || "Movie";
+
+    const previewImg = movieInput.querySelector('.lookup-cover-preview');
+    if (movie.cover) {
+      previewImg.src = movie.cover;
+      previewImg.style.display = "block";
+      previewImg.dataset.remotePoster = movie.cover;
+    }
+
+    document.getElementById('movieInputs').appendChild(movieInput);
+  });
+
+  if (!(series.books || []).length) {
+    document.getElementById('movieInputs').appendChild(createMovieInput());
+  }
+
+  document.getElementById('seriesSubmitBtn').textContent = "Save Collection Changes";
+  document.getElementById('cancelSeriesEditBtn').style.display = "inline-block";
+  document.getElementById('addSeriesForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.getElementById('cancelSeriesEditBtn').addEventListener('click', resetSeriesForm);
 
 document.addEventListener('DOMContentLoaded', () => {
   const data = getMovieSeriesData();
