@@ -354,10 +354,10 @@ input[type=file] {
 
 <script>
 /*
-  Optional: add your Google Books API key below.
-  The lookup can work without one in many cases, but using a key is more reliable.
+  Add your OMDb API key below.
+  Free keys are available from https://www.omdbapi.com/apikey.aspx
 */
-const GOOGLE_BOOKS_API_KEY = "";
+const OMDB_API_KEY = "a5372e78";
 
 function getMovieSeriesData() {
   return JSON.parse(localStorage.getItem('movieSeriesData') || '[]');
@@ -449,57 +449,24 @@ function isOwnedFormat(format) {
   return format === "Blu-ray" || format === "DVD";
 }
 
-function normalizeTitleForMatch(text) {
-  return String(text || "")
-    .toLowerCase()
-    .replace(/[^\w\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function pickBestGoogleBookMatch(items, title) {
-  if (!Array.isArray(items) || !items.length) return null;
-
-  const normalizedQuery = normalizeTitleForMatch(title);
-
-  let exact = items.find(item => {
-    const bookTitle = normalizeTitleForMatch(item.volumeInfo?.title || "");
-    return bookTitle === normalizedQuery;
-  });
-  if (exact) return exact;
-
-  let startsWith = items.find(item => {
-    const bookTitle = normalizeTitleForMatch(item.volumeInfo?.title || "");
-    return bookTitle.startsWith(normalizedQuery) || normalizedQuery.startsWith(bookTitle);
-  });
-  if (startsWith) return startsWith;
-
-  return items[0];
-}
-
 async function lookupMovieData(title) {
-  if (!title) throw new Error("Enter a title first.");
+  if (!title) throw new Error("Enter a movie title first.");
+  if (!OMDB_API_KEY.trim()) throw new Error("Add your OMDb API key first.");
 
-  const query = `intitle:${title}`;
-  let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`;
-
-  if (GOOGLE_BOOKS_API_KEY.trim()) {
-    url += `&key=${encodeURIComponent(GOOGLE_BOOKS_API_KEY.trim())}`;
-  }
-
+  const url = `https://www.omdbapi.com/?apikey=${encodeURIComponent(OMDB_API_KEY.trim())}&t=${encodeURIComponent(title)}`;
   const response = await fetch(url);
+
   if (!response.ok) {
-    throw new Error("Google lookup failed.");
+    throw new Error("Movie lookup failed.");
   }
 
   const data = await response.json();
-  const best = pickBestGoogleBookMatch(data.items || [], title);
 
-  if (!best) {
-    throw new Error("Title not found.");
+  if (data.Response === "False") {
+    throw new Error(data.Error || "Movie not found.");
   }
 
-  return best;
+  return data;
 }
 
 async function handleLookup(button) {
@@ -507,38 +474,40 @@ async function handleLookup(button) {
   if (!wrapper) return;
 
   const titleInput = wrapper.querySelector('.movieTitle');
+  const leadingActorInput = wrapper.querySelector('.movieLeadingActor');
+  const supportingActorInput = wrapper.querySelector('.movieSupportingActor');
   const coverPreview = wrapper.querySelector('.lookup-cover-preview');
   const status = wrapper.querySelector('.lookup-status');
   const title = titleInput.value.trim();
 
   try {
-    status.textContent = "Looking up book cover...";
+    status.textContent = "Looking up movie...";
 
-    const item = await lookupMovieData(title);
-    const info = item.volumeInfo || {};
+    const movie = await lookupMovieData(title);
 
-    if (!titleInput.value.trim() && info.title) {
-      titleInput.value = info.title;
+    if (movie.Title) {
+      titleInput.value = movie.Title;
     }
 
-    const thumb =
-      info.imageLinks?.thumbnail ||
-      info.imageLinks?.smallThumbnail ||
-      "";
+    if (movie.Actors) {
+      const actors = movie.Actors.split(',').map(actor => actor.trim()).filter(Boolean);
+      if (!leadingActorInput.value.trim()) leadingActorInput.value = actors[0] || "";
+      if (!supportingActorInput.value.trim()) supportingActorInput.value = actors[1] || "";
+    }
 
-    if (thumb) {
-      coverPreview.src = thumb.replace(/^http:\/\//i, "https://");
+    if (movie.Poster && movie.Poster !== "N/A") {
+      coverPreview.src = movie.Poster;
       coverPreview.style.display = "block";
-      coverPreview.dataset.remotePoster = coverPreview.src;
+      coverPreview.dataset.remotePoster = movie.Poster;
     } else {
       coverPreview.removeAttribute("src");
       coverPreview.style.display = "none";
       delete coverPreview.dataset.remotePoster;
     }
 
-    status.textContent = "Book cover found.";
+    status.textContent = "Movie found.";
   } catch (error) {
-    status.textContent = error.message || "Google lookup failed.";
+    status.textContent = error.message || "Movie lookup failed.";
   }
 }
 
@@ -556,7 +525,7 @@ function createMovieInput() {
       <option value="Streaming">Streaming</option>
     </select>
     <input type="file" accept="image/*" class="movieCover">
-    <button type="button" class="lookupBtn">Google Lookup</button>
+    <button type="button" class="lookupBtn">Movie Lookup</button>
     <div class="lookup-status full"></div>
     <img class="lookup-cover-preview full" style="display:none; width:100px; height:150px; object-fit:cover; border-radius:8px; background:#ddd;" alt="Poster preview">
   `;
