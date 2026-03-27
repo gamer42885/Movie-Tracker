@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Movies</title>
 <style>
 body { margin:0; font-family: Arial, sans-serif; background:#f4f4f4; color:#000; }
@@ -391,98 +392,86 @@ input[type=text], select, input[type=file] {
 </style>
 </head>
 <body>
-
 <div class="topnav">
-  <a href="index.html">Home</a>
-  <a href="Movies.html">Movies</a>
-  <a href="Monthly_Tracker.html">Monthly Tracker</a>
-  <a href="Yearly_Tracker.html">Yearly Tracker</a>
+<a href="index.html">Home</a>
+<a href="Movies.html">Movies</a>
+<a href="Monthly_Tracker.html">Monthly Tracker</a>
+<a href="Yearly_Tracker.html">Yearly Tracker</a>
 </div>
-
 <div class="container">
-
-  <div class="hero">
-    <h1>🎬 Movie Collection</h1>
-    <p>Track your movie franchises, collections, and watch progress.</p>
-  </div>
-
-  <div class="section">
-    <div class="form-card">
-      <form id="addSeriesForm">
-        <h3 id="seriesFormTitle">Add New Collection / Franchise</h3>
-        <input type="text" id="seriesName" placeholder="Collection / Franchise Name">
-        <input type="text" id="seriesDirector" placeholder="Director">
-        <div id="movieInputs"></div>
-
-        <div class="series-form-actions">
-          <button type="button" id="addMovieBtn">+ Add Another Title</button>
-          <button type="submit" id="seriesSubmitBtn">Add Collection</button>
-          <button type="button" id="cancelSeriesEditBtn">Cancel Edit</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <div class="stats-grid">
-    <div class="format-card">
-      <div class="format-header">🎬 Overall Totals</div>
-      <div class="overall-line">
-        <strong>Watched Titles:</strong> <span id="totalWatched">0</span> |
-        <strong>Owned Titles:</strong> <span id="totalHave">0</span>
-      </div>
-    </div>
-
-    <div class="format-card">
-      <div class="format-header">📦 Format Stats</div>
-      <div class="format-grid">
-        <div class="format-item theater">
-          <span class="icon">🎟️</span>
-          <h3 id="totalMoviesTheater">0</h3>
-          <p>Theater</p>
-        </div>
-        <div class="format-item bluray">
-          <span class="icon">💿</span>
-          <h3 id="totalMoviesBluray">0</h3>
-          <p>Blu-ray</p>
-        </div>
-        <div class="format-item dvd">
-          <span class="icon">📀</span>
-          <h3 id="totalMoviesDvd">0</h3>
-          <p>DVD</p>
-        </div>
-        <div class="format-item streaming">
-          <span class="icon">📺</span>
-          <h3 id="totalMoviesStreaming">0</h3>
-          <p>Streaming</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="format-card">
-      <div class="format-header">🔎 Filter by Format</div>
-      <div id="formatFilters">
-        <button type="button" onclick="setFormatFilter('All')">All</button>
-        <button type="button" onclick="setFormatFilter('Movie')">Theater</button>
-        <button type="button" onclick="setFormatFilter('Blu-ray')">Blu-ray</button>
-        <button type="button" onclick="setFormatFilter('DVD')">DVD</button>
-        <button type="button" onclick="setFormatFilter('Streaming')">Streaming</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="format-card">
-      <div class="format-header">🔍 Search Collections / Movies</div>
-      <input type="text" id="searchInput" placeholder="Search by collection, movie title, leading actor, supporting actor, or director">
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="card-grid" id="seriesGrid"></div>
-  </div>
-
+<div class="hero">
+<h1>🎬 Movie Collection</h1>
+<p>Track your movie franchises, collections, and watch progress.</p>
 </div>
-
+<div class="section">
+<div class="form-card">
+<form id="addSeriesForm">
+<h3 id="seriesFormTitle">Add New Collection / Franchise</h3>
+<input id="seriesName" placeholder="Collection / Franchise Name" type="text"/>
+<input id="seriesDirector" placeholder="Director" type="text"/>
+<div id="movieInputs"></div>
+<div class="series-form-actions">
+<button id="addMovieBtn" type="button">+ Add Another Title</button>
+<button id="seriesSubmitBtn" type="submit">Add Collection</button>
+<button id="cancelSeriesEditBtn" type="button">Cancel Edit</button>
+</div>
+</form>
+</div>
+</div>
+<div class="stats-grid">
+<div class="format-card">
+<div class="format-header">🎬 Overall Totals</div>
+<div class="overall-line">
+<strong>Watched Titles:</strong> <span id="totalWatched">0</span> |
+        <strong>Owned Titles:</strong> <span id="totalHave">0</span>
+</div>
+</div>
+<div class="format-card">
+<div class="format-header">📦 Format Stats</div>
+<div class="format-grid">
+<div class="format-item theater">
+<span class="icon">🎟️</span>
+<h3 id="totalMoviesTheater">0</h3>
+<p>Theater</p>
+</div>
+<div class="format-item bluray">
+<span class="icon">💿</span>
+<h3 id="totalMoviesBluray">0</h3>
+<p>Blu-ray</p>
+</div>
+<div class="format-item dvd">
+<span class="icon">📀</span>
+<h3 id="totalMoviesDvd">0</h3>
+<p>DVD</p>
+</div>
+<div class="format-item streaming">
+<span class="icon">📺</span>
+<h3 id="totalMoviesStreaming">0</h3>
+<p>Streaming</p>
+</div>
+</div>
+</div>
+<div class="format-card">
+<div class="format-header">🔎 Filter by Format</div>
+<div id="formatFilters">
+<button onclick="setFormatFilter('All')" type="button">All</button>
+<button onclick="setFormatFilter('Movie')" type="button">Theater</button>
+<button onclick="setFormatFilter('Blu-ray')" type="button">Blu-ray</button>
+<button onclick="setFormatFilter('DVD')" type="button">DVD</button>
+<button onclick="setFormatFilter('Streaming')" type="button">Streaming</button>
+</div>
+</div>
+</div>
+<div class="section">
+<div class="format-card">
+<div class="format-header">🔍 Search Collections / Movies</div>
+<input id="searchInput" placeholder="Search by collection, movie title, leading actor, supporting actor, or director" type="text"/>
+</div>
+</div>
+<div class="section">
+<div class="card-grid" id="seriesGrid"></div>
+</div>
+</div>
 <script>
 /*
   Add your OMDb API key below.
